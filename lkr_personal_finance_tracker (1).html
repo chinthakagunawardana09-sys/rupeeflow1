@@ -1,0 +1,2730 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RupeeFlow" />
+  <title>RupeeFlow — Personal LKR Finance Tracker</title>
+
+  <!-- Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Icons (Lucide) & Charts (Chart.js) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-up { animation: slideUp 0.2s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen antialiased selection:bg-emerald-500/30">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-[90vw] sm:max-w-sm pointer-events-none"></div>
+
+  <!-- Main App Shell -->
+  <div class="flex min-h-screen">
+
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex md:w-64 lg:w-72 flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 sticky top-0 h-screen shrink-0">
+      <div class="space-y-6 overflow-y-auto no-scrollbar">
+        <!-- Brand -->
+        <div class="flex items-center gap-3 px-2">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-emerald-500/25">
+            රු
+          </div>
+          <div>
+            <h1 class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white leading-tight">RupeeFlow</h1>
+            <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Personal LKR Tracker</p>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="space-y-1.5">
+          <button onclick="switchTab('overview')" data-nav="overview" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            Overview
+          </button>
+          <button onclick="switchTab('add')" data-nav="add" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            Add / Update Entry
+          </button>
+          <button onclick="switchTab('cards')" data-nav="cards" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+            Cards & Wallets
+          </button>
+          <button onclick="switchTab('alerts')" data-nav="alerts" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+            <span class="flex items-center gap-3">
+              <i data-lucide="bell-ring" class="w-5 h-5"></i>
+              Gmail Alerts
+            </span>
+            <span class="alert-badge-count hidden px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-extrabold">0</span>
+          </button>
+          <button onclick="switchTab('transactions')" data-nav="transactions" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+            <i data-lucide="receipt-text" class="w-5 h-5"></i>
+            Transactions
+          </button>
+          <button onclick="switchTab('analytics')" data-nav="analytics" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+            <i data-lucide="pie-chart" class="w-5 h-5"></i>
+            Analytics & Insights
+          </button>
+        </nav>
+      </div>
+
+      <!-- Desktop Sidebar Footer Actions -->
+      <div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <button id="demo-clear-desktop" onclick="confirmClearDemo()" class="hidden w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 transition">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Clear Demo Data
+        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportCSV()" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> CSV
+          </button>
+          <button onclick="exportJSON()" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Backup
+          </button>
+        </div>
+        <button onclick="document.getElementById('import-json-input').click()" class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i> Restore JSON Backup
+        </button>
+      </div>
+    </aside>
+
+    <!-- Hidden JSON Import Input -->
+    <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importJSON(event)" />
+
+    <!-- Main Content Column -->
+    <main class="flex-1 flex flex-col min-w-0 pb-16">
+
+      <!-- Sticky Top Header & Timeframe Selector -->
+      <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 pt-3 pb-2.5">
+        <div class="max-w-5xl mx-auto">
+          <!-- Top Row: Brand (mobile) / Title (desktop) + Quick Actions -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="md:hidden w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-emerald-500/20">
+                රු
+              </div>
+              <div>
+                <h2 id="page-title" class="font-extrabold text-base sm:text-xl text-slate-900 dark:text-white leading-tight">RupeeFlow</h2>
+                <p class="md:hidden text-[11px] font-medium text-slate-500 dark:text-slate-400">Personal LKR Tracker</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="exportCSV()" title="Export CSV" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </button>
+              <button onclick="toggleTheme()" title="Toggle Light / Dark Mode" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                <i data-lucide="sun-moon" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Timeframe Switcher + Period Selector -->
+          <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="grid grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
+              <button onclick="setTimeframe('daily')" data-tf="daily" class="tf-btn py-1.5 px-2 rounded-lg text-xs font-bold transition">Daily</button>
+              <button onclick="setTimeframe('monthly')" data-tf="monthly" class="tf-btn py-1.5 px-2 rounded-lg text-xs font-bold transition">Monthly</button>
+              <button onclick="setTimeframe('annual')" data-tf="annual" class="tf-btn py-1.5 px-2 rounded-lg text-xs font-bold transition">Annual</button>
+              <button onclick="setTimeframe('all')" data-tf="all" class="tf-btn py-1.5 px-2 rounded-lg text-xs font-bold transition">All-Time</button>
+            </div>
+
+            <!-- Dynamic Period Picker -->
+            <div id="period-picker-wrap" class="flex items-center gap-1.5">
+              <input type="date" id="picker-daily" onchange="onPeriodChange()" class="hidden w-full sm:w-auto px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <input type="month" id="picker-monthly" onchange="onPeriodChange()" class="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <select id="picker-annual" onchange="onPeriodChange()" class="hidden w-full sm:w-auto px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+              <span id="picker-all-label" class="hidden w-full sm:w-auto text-center px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 text-xs font-bold text-slate-500 dark:text-slate-400">All Recorded History</span>
+            </div>
+          </div>
+
+          <!-- Mobile Navigation Bar (Placed in Top Header so Netlify badge at bottom-right never covers tabs) -->
+          <nav class="md:hidden mt-3 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+            <div class="grid grid-cols-6 gap-0.5">
+              <button onclick="switchTab('overview')" data-nav="overview" class="nav-btn flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl text-[9px] font-semibold transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Overview</span>
+              </button>
+              <button onclick="switchTab('add')" data-nav="add" class="nav-btn flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl text-[9px] font-semibold transition">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Entry</span>
+              </button>
+              <button onclick="switchTab('cards')" data-nav="cards" class="nav-btn flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl text-[9px] font-semibold transition">
+                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                <span>Cards</span>
+              </button>
+              <button onclick="switchTab('alerts')" data-nav="alerts" class="nav-btn relative flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl text-[9px] font-semibold transition">
+                <div class="relative">
+                  <i data-lucide="bell-ring" class="w-4 h-4"></i>
+                  <span class="alert-badge-count hidden absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center">0</span>
+                </div>
+                <span>Alerts</span>
+              </button>
+              <button onclick="switchTab('transactions')" data-nav="transactions" class="nav-btn flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl text-[9px] font-semibold transition">
+                <i data-lucide="receipt-text" class="w-4 h-4"></i>
+                <span>History</span>
+              </button>
+              <button onclick="switchTab('analytics')" data-nav="analytics" class="nav-btn flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl text-[9px] font-semibold transition">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                <span>Stats</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <!-- ========================================================= -->
+      <!-- TAB 1: OVERVIEW                                           -->
+      <!-- ========================================================= -->
+      <section id="tab-overview" class="tab-section p-4 sm:p-6 space-y-5 max-w-5xl mx-auto w-full animate-slide-up">
+
+        <!-- Demo Banner (if active) -->
+        <div id="demo-banner" class="hidden rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-start gap-2.5">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
+            <p class="text-xs text-amber-700 dark:text-amber-300">
+              <strong>Sample Data Loaded:</strong> Explore how cards, daily rides, bills, and salary look. Tap <strong>Start Fresh</strong> whenever you are ready to log your real numbers.
+            </p>
+          </div>
+          <button onclick="confirmClearDemo()" class="shrink-0 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+            Start Fresh
+          </button>
+        </div>
+
+        <!-- Hero Balance Card -->
+        <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 border border-slate-800 p-5 sm:p-6 text-white shadow-xl">
+          <div class="flex items-center justify-between gap-2">
+            <span id="overview-period-label" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/25 px-3 py-1 rounded-full">
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i> This Month
+            </span>
+            <button onclick="switchTab('add')" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Entry
+            </button>
+          </div>
+
+          <div class="mt-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Net Balance (Income − Expenses)</p>
+            <h3 id="ov-net-balance" class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1">LKR 0</h3>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-white/10">
+            <div class="rounded-2xl bg-white/5 p-3.5">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                <i data-lucide="arrow-down-left" class="w-4 h-4"></i> Total Income
+              </div>
+              <p id="ov-income" class="text-lg sm:text-xl font-extrabold text-white mt-1">LKR 0</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 p-3.5">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i> Total Expenses
+              </div>
+              <p id="ov-expense" class="text-lg sm:text-xl font-extrabold text-white mt-1">LKR 0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixed Bills vs Daily Small Spend Split -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-500">Fixed Bills & Loans</span>
+              <span id="ov-fixed-pct" class="text-xs font-extrabold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-lg">0%</span>
+            </div>
+            <p id="ov-fixed-amt" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">LKR 0</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Rent, CEB/Water, Dialog/SLT, Leasing, Subscriptions</p>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-3">
+              <div id="ov-fixed-bar" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-500">Daily & Small Spend</span>
+              <span id="ov-var-pct" class="text-xs font-extrabold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-lg">0%</span>
+            </div>
+            <p id="ov-var-amt" class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">LKR 0</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Uber, PickMe, Food, Groceries, Shopping & Misc</p>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-3">
+              <div id="ov-var-bar" class="h-full bg-amber-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Spending Categories & Recent Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Top Categories -->
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-base text-slate-900 dark:text-white">Where You Spent Most</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Top expense categories for selected period</p>
+              </div>
+              <button onclick="switchTab('analytics')" class="text-xs font-bold text-emerald-500 hover:text-emerald-400">Full Stats →</button>
+            </div>
+            <div id="ov-top-categories" class="space-y-3"></div>
+          </div>
+
+          <!-- Recent Transactions -->
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-base text-slate-900 dark:text-white">Recent Entries</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Tap any entry to edit or update</p>
+              </div>
+              <button onclick="switchTab('transactions')" class="text-xs font-bold text-emerald-500 hover:text-emerald-400">See All →</button>
+            </div>
+            <div id="ov-recent-list" class="space-y-1.5"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 2: ADD / UPDATE ENTRY (EXPENSE, INCOME, CARD PAY)     -->
+      <!-- ========================================================= -->
+      <section id="tab-add" class="tab-section hidden p-4 sm:p-6 max-w-2xl mx-auto w-full animate-slide-up">
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h2 id="form-heading" class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">Add New Entry</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Log expenses, salary, credit card bills, or ATM cash</p>
+            </div>
+            <button type="button" id="cancel-edit-btn" onclick="resetEntryForm()" class="hidden px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
+              Cancel Edit
+            </button>
+          </div>
+
+          <form id="entry-form" class="space-y-4">
+            <input type="hidden" id="entry-id" value="" />
+
+            <!-- Income / Expense / Card Payment & Transfer Segmented Toggle -->
+            <div class="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90">
+              <button type="button" id="btn-type-expense" onclick="setEntryType('expense')" class="py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="arrow-up-right" class="w-4 h-4 shrink-0"></i> Expense
+              </button>
+              <button type="button" id="btn-type-income" onclick="setEntryType('income')" class="py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="arrow-down-left" class="w-4 h-4 shrink-0"></i> Income
+              </button>
+              <button type="button" id="btn-type-transfer" onclick="setEntryType('transfer')" class="py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0"></i> Card Pay / Cash
+              </button>
+            </div>
+
+            <!-- Transfer Info Banner -->
+            <div id="transfer-info-banner" class="hidden p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-600 dark:text-indigo-300 space-y-1">
+              <p class="font-bold flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-indigo-400"></i> Zero Double-Counting Protection</p>
+              <p class="text-[11px] opacity-90">Paying off a credit card or withdrawing Cash in Hand moves funds between your accounts without counting again as a new expense.</p>
+            </div>
+
+            <!-- Quick Tap Presets -->
+            <div id="manual-presets-bar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-1">Quick:</span>
+              <button type="button" onclick="applyManualPreset('Uber Ride', 'exp-rides', 'variable')" class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition">🚗 Uber</button>
+              <button type="button" onclick="applyManualPreset('PickMe Ride', 'exp-rides', 'variable')" class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition">🛺 PickMe</button>
+              <button type="button" onclick="applyManualPreset('Lunch / Coffee', 'exp-food', 'variable')" class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition">🍔 Food</button>
+              <button type="button" onclick="applyManualPreset('Supermarket Groceries', 'exp-groceries', 'variable')" class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">🛒 Groceries</button>
+              <button type="button" onclick="applyManualPreset('Utility / Telecom Bill', 'exp-utility', 'fixed')" class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition">⚡ Utility Bill</button>
+            </div>
+
+            <!-- Amount Input -->
+            <div>
+              <label for="entry-amount" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Amount (LKR)</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-extrabold text-slate-400">LKR</span>
+                <input type="number" id="entry-amount" step="0.01" min="0.01" required placeholder="0.00" class="w-full pl-14 pr-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-xl font-extrabold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+            </div>
+
+            <!-- Category + Add Custom Category -->
+            <div id="entry-category-wrapper">
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="entry-category" class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</label>
+                <button type="button" onclick="openCategoryModal()" class="text-xs font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-1">
+                  <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> + New Category
+                </button>
+              </div>
+              <select id="entry-category" onchange="onCategorySelectChange()" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+            </div>
+
+            <!-- Fixed vs Daily Spend Classification (Expense Only) -->
+            <div id="expense-nature-wrapper">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Spending Group</label>
+              <div class="grid grid-cols-2 gap-2.5">
+                <label class="cursor-pointer">
+                  <input type="radio" name="expenseNature" value="variable" checked class="peer sr-only" />
+                  <div class="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 transition text-center">
+                    <p class="text-xs font-bold text-slate-900 dark:text-white">Daily / Small Spend</p>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Uber, PickMe, Food, Shopping</p>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="expenseNature" value="fixed" class="peer sr-only" />
+                  <div class="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 peer-checked:border-indigo-500 peer-checked:bg-indigo-500/10 transition text-center">
+                    <p class="text-xs font-bold text-slate-900 dark:text-white">Fixed Bill / Loan</p>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Rent, Utilities, Loans, Subs</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Transfer From -> To Account Selectors -->
+            <div id="transfer-accounts-wrapper" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="transfer-from" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">From Account</label>
+                <select id="transfer-from" onchange="autoUpdateTransferTitle()" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+              </div>
+              <div>
+                <label for="transfer-to" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">To Card / Cash in Hand</label>
+                <select id="transfer-to" onchange="autoUpdateTransferTitle()" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+              </div>
+            </div>
+
+            <!-- Title / Description -->
+            <div>
+              <label for="entry-title" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">What was this for?</label>
+              <input type="text" id="entry-title" required placeholder="e.g., Lunch with NTB Amex, CEB Bill, PickMe Ride" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
+            <!-- Date & Payment Method -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="entry-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Date</label>
+                <input type="date" id="entry-date" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div id="entry-method-wrapper">
+                <label for="entry-method" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Paid From (Card / Cash / Bank)</label>
+                <select id="entry-method" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="NTB Amex">NTB Amex (Limit 550k)</option>
+                  <option value="Seylan Visa">Seylan Visa (Limit 500k)</option>
+                  <option value="HNB Visa">HNB Visa (Limit 200k)</option>
+                  <option value="Cash in Hand">Cash in Hand</option>
+                  <option value="Online Banking / Transfer">Bank Account / Online Transfer</option>
+                  <option value="FriMi / Genie / Solo">FriMi / Genie / Solo / LankaQR</option>
+                  <option value="Debit Card">Debit Card</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" id="submit-entry-btn" class="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+              <span>Save Entry</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 3: CREDIT CARDS & CASH IN HAND WALLETS                -->
+      <!-- ========================================================= -->
+      <section id="tab-cards" class="tab-section hidden p-4 sm:p-6 space-y-5 max-w-5xl mx-auto w-full animate-slide-up">
+        
+        <!-- Summary Header Banner -->
+        <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 p-5 sm:p-6 text-white shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-500/15 border border-indigo-500/25 px-2.5 py-1 rounded-full mb-2">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Zero Double-Counting System
+              </span>
+              <h2 class="text-xl sm:text-2xl font-extrabold">Credit Cards & Cash in Hand</h2>
+              <p class="text-xs text-slate-400 mt-1">Total Credit Limit: <strong class="text-white">LKR 1,250,000</strong> • Paying a card settles its due balance without deducting twice from your income.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 shrink-0">
+              <button onclick="openQuickTransfer('Online Banking / Transfer', 'Cash in Hand')" class="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
+                <i data-lucide="banknote" class="w-4 h-4"></i> + Add Cash in Hand
+              </button>
+              <button onclick="openQuickTransfer('Online Banking / Transfer', 'NTB Amex')" class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i> Settle Card Bill
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-white/10">
+            <div class="rounded-2xl bg-white/5 p-3">
+              <span class="text-[11px] text-slate-400 font-semibold">Total Card Used (Due)</span>
+              <p id="cards-total-used" class="text-base sm:text-lg font-extrabold text-rose-400 mt-0.5">LKR 0</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 p-3">
+              <span class="text-[11px] text-slate-400 font-semibold">Available Credit Limit</span>
+              <p id="cards-total-avail" class="text-base sm:text-lg font-extrabold text-emerald-400 mt-0.5">LKR 1,250,000</p>
+            </div>
+            <div class="col-span-2 sm:col-span-1 rounded-2xl bg-white/5 p-3">
+              <span class="text-[11px] text-slate-400 font-semibold">Cash in Hand Balance</span>
+              <p id="wallet-cash-balance" class="text-base sm:text-lg font-extrabold text-amber-400 mt-0.5">LKR 0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Credit Cards Grid -->
+        <div>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Your 3 Credit Cards</h3>
+          <div id="credit-cards-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Cash in Hand & Explanation -->
+        <div>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Cash in Hand & How It Works</h3>
+          <div id="cash-wallets-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Recent Card Settlements & Cash Withdrawals -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+          <div class="mb-3">
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Card Settlements & Cash Transfers</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Internal transfers (never counted twice as expenses)</p>
+          </div>
+          <div id="card-transfers-list" class="space-y-2"></div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 4: GMAIL ALERTS & AUTO-APPROVAL QUEUE                 -->
+      <!-- ========================================================= -->
+      <section id="tab-alerts" class="tab-section hidden p-4 sm:p-6 space-y-5 max-w-4xl mx-auto w-full animate-slide-up">
+
+        <!-- Gmail Bridge Status Header -->
+        <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-rose-950/60 border border-slate-800 p-5 text-white shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="gmail-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span id="gmail-status-text" class="text-xs font-bold uppercase tracking-wider text-slate-300">Simulator Mode (Not Connected)</span>
+              </div>
+              <h2 class="text-xl font-extrabold mt-1">Gmail Payment Alerts</h2>
+              <p class="text-xs text-slate-400 mt-1">Detects Seylan, NTB Amex, HNB, Uber, PickMe & Subscriptions. Approve with one tap or enable auto-approve.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 shrink-0">
+              <button onclick="openGmailSetupModal()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="mail-check" class="w-4 h-4"></i> Connect Gmail
+              </button>
+              <button onclick="syncFromGmailBridge()" id="btn-sync-gmail" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now
+              </button>
+              <button onclick="simulateIncomingGmailAlert()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i> Test Alert
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-Approve Permission Settings -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white">Auto-Approve Trusted Alerts</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Turn ON to automatically add selected sources without manual confirmation.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+              <input type="checkbox" id="toggle-auto-approve" onchange="toggleAutoApprove()" class="sr-only peer" />
+              <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-emerald-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+            </label>
+          </div>
+          <div id="trusted-sources-wrap" class="hidden pt-2 border-t border-slate-100 dark:border-slate-800">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Trusted Sources to Auto-Approve:</p>
+            <div id="trusted-sources-chips" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Pending Alerts List -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Waiting for Your Approval (<span id="pending-count-inline">0</span>)</h3>
+            <button id="btn-approve-all" onclick="approveAllPendingAlerts()" class="hidden px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 text-xs font-bold transition">
+              Approve All
+            </button>
+          </div>
+          <div id="pending-alerts-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Auto-Approved Undo Log -->
+        <div id="auto-approved-section" class="hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-3">
+          <h3 class="font-bold text-sm text-slate-900 dark:text-white">Recently Auto-Approved (Tap Undo to Revert)</h3>
+          <div id="auto-approved-list" class="space-y-2"></div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 5: TRANSACTIONS HISTORY                               -->
+      <!-- ========================================================= -->
+      <section id="tab-transactions" class="tab-section hidden p-4 sm:p-6 space-y-4 max-w-5xl mx-auto w-full animate-slide-up">
+
+        <!-- Search & Filter Bar -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="tx-search" oninput="renderTransactions()" placeholder="Search Uber, PickMe, Seylan, NTB Amex, Rent..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <select id="tx-filter-type" onchange="renderTransactions()" class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="all">All Types</option>
+              <option value="expense">Expenses Only</option>
+              <option value="income">Income Only</option>
+              <option value="transfer">Card Payments & Transfers</option>
+            </select>
+            <select id="tx-filter-nature" onchange="renderTransactions()" class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="all">Fixed & Daily</option>
+              <option value="fixed">Fixed Bills & Loans</option>
+              <option value="variable">Daily Small Spend</option>
+            </select>
+            <select id="tx-filter-category" onchange="renderTransactions()" class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="all">All Categories</option>
+            </select>
+            <select id="tx-filter-method" onchange="renderTransactions()" class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="all">All Cards & Accounts</option>
+              <option value="NTB Amex">NTB Amex</option>
+              <option value="Seylan Visa">Seylan Visa</option>
+              <option value="HNB Visa">HNB Visa</option>
+              <option value="Cash in Hand">Cash in Hand</option>
+              <option value="Online Banking / Transfer">Online Banking</option>
+              <option value="FriMi / Genie / Solo">FriMi / Genie / Solo</option>
+              <option value="Debit Card">Debit Card</option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <span id="tx-count-label" class="font-semibold text-slate-500 dark:text-slate-400">0 entries</span>
+            <div class="flex items-center gap-3 font-bold">
+              <span id="tx-filtered-in" class="text-emerald-500">+ LKR 0</span>
+              <span id="tx-filtered-out" class="text-rose-500">- LKR 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transactions List -->
+        <div id="transactions-list" class="space-y-2.5"></div>
+
+        <!-- Mobile Backup & Export Controls -->
+        <div class="md:hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-2.5">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Backup & Data Controls</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="exportCSV()" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold flex items-center justify-center gap-1.5">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i> Export CSV
+            </button>
+            <button onclick="exportJSON()" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold flex items-center justify-center gap-1.5">
+              <i data-lucide="download" class="w-4 h-4 text-indigo-400"></i> JSON Backup
+            </button>
+          </div>
+          <button onclick="document.getElementById('import-json-input').click()" class="w-full py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold flex items-center justify-center gap-1.5">
+            <i data-lucide="upload" class="w-4 h-4 text-amber-500"></i> Restore JSON Backup
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 6: ANALYTICS & INSIGHTS                               -->
+      <!-- ========================================================= -->
+      <section id="tab-analytics" class="tab-section hidden p-4 sm:p-6 space-y-5 max-w-5xl mx-auto w-full animate-slide-up">
+
+        <!-- Key Insights Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Highest Expense Category</p>
+            <h3 id="an-top-cat" class="text-lg font-extrabold text-rose-500 mt-1 truncate">No Expenses</h3>
+            <p id="an-top-cat-amt" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">LKR 0</p>
+          </div>
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Savings Rate</p>
+            <h3 id="an-savings-rate" class="text-lg font-extrabold text-emerald-500 mt-1">0%</h3>
+            <p id="an-savings-note" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Log income to calculate</p>
+          </div>
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Most Used Payment Method</p>
+            <h3 id="an-top-method" class="text-lg font-extrabold text-indigo-400 mt-1 truncate">—</h3>
+            <p id="an-top-method-amt" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">LKR 0</p>
+          </div>
+        </div>
+
+        <!-- Expense Breakdown Donut Chart -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-base text-slate-900 dark:text-white">Expense Breakdown</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Where your money goes in selected period</p>
+            </div>
+            <button onclick="openCategoryModal()" class="text-xs font-bold text-emerald-500 hover:text-emerald-400">+ Add Category</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div class="relative h-60 flex items-center justify-center">
+              <canvas id="chart-expense-donut"></canvas>
+              <p id="donut-empty-msg" class="hidden absolute text-xs font-semibold text-slate-400">No expenses in this period</p>
+            </div>
+            <div id="an-category-legend" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+        <!-- Monthly Income vs Expense Trend Chart -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+          <div class="mb-4">
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Annual Monthly Trend (<span id="an-trend-year">2026</span>)</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Month-by-month Income vs Expenses (excluding internal card transfers)</p>
+          </div>
+          <div class="relative h-64">
+            <canvas id="chart-annual-bar"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 1: ADD CUSTOM CATEGORY                              -->
+  <!-- ========================================================= -->
+  <div id="category-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Create Custom Category</h3>
+        <button onclick="closeCategoryModal()" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="category-form" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Category Name</label>
+          <input type="text" id="cat-name-input" required placeholder="e.g., Fuel, Gym, Tuition, Freelance" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Type</label>
+            <select id="cat-type-input" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Default Group</label>
+            <select id="cat-nature-input" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="variable">Daily / Small Spend</option>
+              <option value="fixed">Fixed Bill / Loan</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Color Tag</label>
+          <div id="cat-color-swatches" class="flex flex-wrap gap-2"></div>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+          Add Category
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: EDIT & APPROVE GMAIL ALERT                       -->
+  <!-- ========================================================= -->
+  <div id="edit-alert-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Edit & Approve Alert</h3>
+        <button onclick="closeEditAlertModal()" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="edit-alert-form" class="space-y-3.5">
+        <input type="hidden" id="edit-alert-id" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Type</label>
+            <select id="edit-alert-type" onchange="populateEditAlertCategories()" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="expense">Expense / Spend</option>
+              <option value="income">Income / Credit</option>
+              <option value="transfer">Card Bill Settlement</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Card / Account</label>
+            <select id="edit-alert-method" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="NTB Amex">NTB Amex</option>
+              <option value="Seylan Visa">Seylan Visa</option>
+              <option value="HNB Visa">HNB Visa</option>
+              <option value="Cash in Hand">Cash in Hand</option>
+              <option value="Online Banking / Transfer">Bank Account</option>
+              <option value="FriMi / Genie / Solo">FriMi / Genie / Solo</option>
+              <option value="Debit Card">Debit Card</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Amount (LKR)</label>
+          <input type="number" step="0.01" id="edit-alert-amount" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Category</label>
+          <select id="edit-alert-category" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Title</label>
+          <input type="text" id="edit-alert-title" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Date</label>
+            <input type="date" id="edit-alert-date" required class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Group</label>
+            <select id="edit-alert-nature" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+              <option value="variable">Daily Spend</option>
+              <option value="fixed">Fixed Bill</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+          Approve & Add to Tracker
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 3: CONNECT GMAIL (APPS SCRIPT BRIDGE)               -->
+  <!-- ========================================================= -->
+  <div id="gmail-setup-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Connect Your Gmail Inbox</h3>
+        <button onclick="closeGmailSetupModal()" class="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <ol class="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-decimal pl-4">
+        <li>Open <strong>script.google.com</strong> on your browser and create a <strong>New Project</strong>.</li>
+        <li>Copy the script below and paste it into <code>Code.gs</code>, then click <strong>Save</strong>.</li>
+        <li>Click <strong>Deploy → New Deployment → Web App</strong>. Set <em>Execute as: Me</em> and <em>Who has access: Anyone</em>.</li>
+        <li>Paste the generated <strong>Web App URL</strong> below and tap <strong>Save & Sync</strong>.</li>
+      </ol>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="text-[11px] font-bold uppercase text-slate-400">Google Apps Script (Seylan, NTB, HNB, Uber, PickMe)</label>
+          <button type="button" onclick="copyAppsScriptCode()" class="text-xs font-bold text-emerald-500 hover:text-emerald-400">Copy Script</button>
+        </div>
+        <textarea id="apps-script-code-box" readonly rows="7" class="w-full p-3 rounded-xl bg-slate-950 text-emerald-300 font-mono text-[11px] border border-slate-800 focus:outline-none"></textarea>
+      </div>
+
+      <div class="space-y-1.5">
+        <label for="gmail-webapp-url" class="block text-xs font-semibold uppercase text-slate-400">Your Web App URL</label>
+        <input type="url" id="gmail-webapp-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium" />
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" onclick="saveGmailWebAppUrl()" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+          Save & Sync Now
+        </button>
+        <button type="button" onclick="disconnectGmailBridge()" class="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs transition">
+          Disconnect
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 4: CUSTOM CONFIRMATION DIALOG (NO NATIVE CONFIRM)   -->
+  <!-- ========================================================= -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-[60] bg-slate-950/75 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+      <h3 id="confirm-modal-title" class="font-extrabold text-base text-slate-900 dark:text-white">Confirm Action</h3>
+      <p id="confirm-modal-msg" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+      <div class="flex gap-2 justify-end">
+        <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">Cancel</button>
+        <button id="confirm-modal-ok" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-extrabold">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. STATE & DEFAULT CONFIGURATION (LKR)
+    // ==========================================
+    const STORAGE_KEYS = {
+      TX: 'rupeeflow_transactions_v1',
+      CATS: 'rupeeflow_categories_v1',
+      DEMO: 'rupeeflow_is_demo_v1',
+      THEME: 'rupeeflow_theme_v1',
+      PENDING_ALERTS: 'rupeeflow_pending_alerts_v1',
+      AUTO_APPROVED_LOG: 'rupeeflow_auto_approved_v1',
+      GMAIL_CONFIG: 'rupeeflow_gmail_config_v1',
+      CARDS_META: 'rupeeflow_cards_meta_v1'
+    };
+
+    const SWATCH_COLORS = [
+      '#10b981', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899',
+      '#f43f5e', '#f59e0b', '#eab308', '#14b8a6', '#64748b'
+    ];
+
+    const ALL_GMAIL_SOURCES = ['Seylan Bank', 'NTB / Amex', 'HNB', 'Uber', 'PickMe', 'Subscriptions'];
+
+    const DEFAULT_CREDIT_CARDS = [
+      { id: 'NTB Amex', name: 'NTB Amex', bank: 'Nations Trust Bank', limit: 550000, openingUsed: 0, gradient: 'from-amber-600 via-yellow-600 to-amber-800' },
+      { id: 'Seylan Visa', name: 'Seylan Visa', bank: 'Seylan Bank', limit: 500000, openingUsed: 0, gradient: 'from-blue-600 via-indigo-600 to-slate-900' },
+      { id: 'HNB Visa', name: 'HNB Visa', bank: 'Hatton National Bank', limit: 200000, openingUsed: 0, gradient: 'from-emerald-600 via-teal-600 to-slate-900' }
+    ];
+
+    const ACCOUNT_OPTIONS = [
+      'Online Banking / Transfer',
+      'Cash in Hand',
+      'NTB Amex',
+      'Seylan Visa',
+      'HNB Visa',
+      'FriMi / Genie / Solo',
+      'Debit Card'
+    ];
+
+    const DEFAULT_CATEGORIES = [
+      // Income
+      { id: 'inc-salary', name: 'Monthly Salary', type: 'income', nature: 'fixed', color: '#10b981', custom: false },
+      { id: 'inc-bonus', name: 'Bonus / Allowance', type: 'income', nature: 'variable', color: '#14b8a6', custom: false },
+      { id: 'inc-other', name: 'Other Income / Side Hustle', type: 'income', nature: 'variable', color: '#0ea5e9', custom: false },
+      // Fixed Expenses
+      { id: 'exp-rent', name: 'Rent & Housing', type: 'expense', nature: 'fixed', color: '#6366f1', custom: false },
+      { id: 'exp-utility', name: 'Utility Bills (CEB / Water / Dialog / SLT)', type: 'expense', nature: 'fixed', color: '#0ea5e9', custom: false },
+      { id: 'exp-loans', name: 'Loans & Leasing', type: 'expense', nature: 'fixed', color: '#ec4899', custom: false },
+      { id: 'exp-cards', name: 'Card Interest / Annual Fees', type: 'expense', nature: 'fixed', color: '#8b5cf6', custom: false },
+      { id: 'exp-subs', name: 'Subscriptions & Internet', type: 'expense', nature: 'fixed', color: '#64748b', custom: false },
+      // Daily / Small Spend
+      { id: 'exp-rides', name: 'Uber & PickMe Rides', type: 'expense', nature: 'variable', color: '#f59e0b', custom: false },
+      { id: 'exp-food', name: 'Food, Dining & Coffee', type: 'expense', nature: 'variable', color: '#f43f5e', custom: false },
+      { id: 'exp-groceries', name: 'Groceries & Supermarket', type: 'expense', nature: 'variable', color: '#10b981', custom: false },
+      { id: 'exp-shopping', name: 'Shopping & Personal', type: 'expense', nature: 'variable', color: '#a855f7', custom: false },
+      { id: 'exp-other', name: 'Other Small Payments', type: 'expense', nature: 'variable', color: '#94a3b8', custom: false }
+    ];
+
+    let state = {
+      transactions: [],
+      categories: [],
+      cardsMeta: [...DEFAULT_CREDIT_CARDS],
+      openingCashInHand: 0,
+      pendingAlerts: [],
+      autoApprovedLog: [],
+      gmailConfig: {
+        webAppUrl: '',
+        autoApproveEnabled: false,
+        trustedSources: ['Uber', 'PickMe']
+      },
+      isDemo: false,
+      activeTab: 'overview',
+      timeframe: 'monthly',
+      selectedDate: '',
+      selectedMonth: '',
+      selectedYear: '',
+      entryType: 'expense',
+      selectedSwatch: SWATCH_COLORS[0]
+    };
+
+    let donutChart = null;
+    let barChart = null;
+    let confirmCallback = null;
+
+    // ==========================================
+    // 2. HELPERS (DATE, CURRENCY, ESCAPING)
+    // ==========================================
+    function getTodayISO() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatLKR(amount) {
+      const num = Number(amount) || 0;
+      const abs = Math.abs(num);
+      const formatted = abs.toLocaleString('en-LK', {
+        minimumFractionDigits: abs % 1 !== 0 ? 2 : 0,
+        maximumFractionDigits: 2
+      });
+      return `${num < 0 ? '- ' : ''}LKR ${formatted}`;
+    }
+
+    function formatDisplayDate(iso) {
+      if (!iso) return '';
+      const parts = iso.split('-');
+      if (parts.length !== 3) return iso;
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function getCategoryById(id) {
+      return state.categories.find(c => c.id === id) || { id: 'unknown', name: 'Uncategorized', type: 'expense', nature: 'variable', color: '#94a3b8' };
+    }
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      const colors = type === 'error'
+        ? 'bg-rose-600 text-white'
+        : 'bg-slate-900 dark:bg-emerald-500 text-white dark:text-slate-950';
+      el.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 animate-slide-up ${colors}`;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => el.remove(), 250);
+      }, 2800);
+    }
+
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById('confirm-modal-title').textContent = title;
+      document.getElementById('confirm-modal-msg').textContent = message;
+      confirmCallback = onConfirm;
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      confirmCallback = null;
+    }
+
+    document.getElementById('confirm-modal-ok').addEventListener('click', function() {
+      if (typeof confirmCallback === 'function') confirmCallback();
+      closeConfirmModal();
+    });
+
+    // ==========================================
+    // 3. INITIALIZATION & STORAGE
+    // ==========================================
+    function generateDemoTransactions() {
+      const today = getTodayISO();
+      const ym = today.slice(0, 7);
+      return [
+        { id: 'demo-1', type: 'income', amount: 285000, categoryId: 'inc-salary', title: 'Monthly Net Salary', date: `${ym}-01`, method: 'Online Banking / Transfer', nature: 'fixed' },
+        { id: 'demo-2', type: 'expense', amount: 55000, categoryId: 'exp-rent', title: 'House Rent Payment', date: `${ym}-02`, method: 'Online Banking / Transfer', nature: 'fixed' },
+        { id: 'demo-3', type: 'expense', amount: 14800, categoryId: 'exp-utility', title: 'CEB Electricity & SLT Fiber', date: `${ym}-05`, method: 'Seylan Visa', nature: 'fixed' },
+        { id: 'demo-4', type: 'transfer', amount: 20000, categoryId: 'exp-cards', title: 'Cash in Hand Withdrawal (ATM)', date: `${ym}-06`, method: 'Online Banking / Transfer', toAccount: 'Cash in Hand', nature: 'fixed' },
+        { id: 'demo-5', type: 'transfer', amount: 18500, categoryId: 'exp-cards', title: 'Card Settlement: Online Banking / Transfer → NTB Amex', date: `${ym}-10`, method: 'Online Banking / Transfer', toAccount: 'NTB Amex', nature: 'fixed' },
+        { id: 'demo-6', type: 'expense', amount: 16400, categoryId: 'exp-groceries', title: 'Weekly Supermarket Groceries', date: `${ym}-12`, method: 'Seylan Visa', nature: 'variable' },
+        { id: 'demo-7', type: 'expense', amount: 1450, categoryId: 'exp-rides', title: 'PickMe Ride to Office', date: today, method: 'Cash in Hand', nature: 'variable' },
+        { id: 'demo-8', type: 'expense', amount: 2850, categoryId: 'exp-food', title: 'Lunch & Coffee Order', date: today, method: 'NTB Amex', nature: 'variable' },
+        { id: 'demo-9', type: 'expense', amount: 1850, categoryId: 'exp-rides', title: 'Uber Evening Ride Home', date: today, method: 'HNB Visa', nature: 'variable' }
+      ];
+    }
+
+    function generateInitialDemoAlerts() {
+      const today = getTodayISO();
+      return [
+        {
+          id: 'gmail-sim-1',
+          source: 'Seylan Bank',
+          type: 'expense',
+          amount: 4850,
+          categoryId: 'exp-groceries',
+          title: 'Seylan Visa — Keells Super',
+          date: today,
+          method: 'Seylan Visa',
+          nature: 'variable',
+          snippet: 'Seylan Card Alert: LKR 4,850.00 charged at KEELLS SUPER.'
+        },
+        {
+          id: 'gmail-sim-2',
+          source: 'NTB / Amex',
+          type: 'expense',
+          amount: 6200,
+          categoryId: 'exp-food',
+          title: 'NTB Amex — Dining / Takeout',
+          date: today,
+          method: 'NTB Amex',
+          nature: 'variable',
+          snippet: 'NTB Card Alert: LKR 6,200.00 charged on your American Express Card.'
+        },
+        {
+          id: 'gmail-sim-3',
+          source: 'PickMe',
+          type: 'expense',
+          amount: 980,
+          categoryId: 'exp-rides',
+          title: 'PickMe Mini Ride Receipt',
+          date: today,
+          method: 'Cash in Hand',
+          nature: 'variable',
+          snippet: 'Thanks for riding with PickMe! Total Trip Fare: LKR 980.00.'
+        }
+      ];
+    }
+
+    function initApp() {
+      // Theme
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (savedTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+
+      // Dates
+      const today = getTodayISO();
+      state.selectedDate = today;
+      state.selectedMonth = today.slice(0, 7);
+      state.selectedYear = today.slice(0, 4);
+
+      document.getElementById('picker-daily').value = state.selectedDate;
+      document.getElementById('picker-monthly').value = state.selectedMonth;
+      document.getElementById('entry-date').value = today;
+
+      // Load Categories
+      try {
+        const savedCats = JSON.parse(localStorage.getItem(STORAGE_KEYS.CATS));
+        state.categories = Array.isArray(savedCats) && savedCats.length > 0 ? savedCats : [...DEFAULT_CATEGORIES];
+      } catch (e) {
+        state.categories = [...DEFAULT_CATEGORIES];
+      }
+
+      // Load Transactions
+      try {
+        const savedTx = JSON.parse(localStorage.getItem(STORAGE_KEYS.TX));
+        const demoFlag = localStorage.getItem(STORAGE_KEYS.DEMO);
+        if (Array.isArray(savedTx)) {
+          state.transactions = savedTx;
+          state.isDemo = demoFlag === 'true';
+        } else {
+          state.transactions = generateDemoTransactions();
+          state.isDemo = true;
+        }
+      } catch (e) {
+        state.transactions = generateDemoTransactions();
+        state.isDemo = true;
+      }
+
+      // Load Gmail Alerts & Config
+      try {
+        const savedAlerts = JSON.parse(localStorage.getItem(STORAGE_KEYS.PENDING_ALERTS));
+        state.pendingAlerts = Array.isArray(savedAlerts) ? savedAlerts : generateInitialDemoAlerts();
+      } catch (e) {
+        state.pendingAlerts = generateInitialDemoAlerts();
+      }
+
+      try {
+        const savedLog = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTO_APPROVED_LOG));
+        state.autoApprovedLog = Array.isArray(savedLog) ? savedLog : [];
+      } catch (e) {
+        state.autoApprovedLog = [];
+      }
+
+      try {
+        const savedCfg = JSON.parse(localStorage.getItem(STORAGE_KEYS.GMAIL_CONFIG));
+        if (savedCfg && typeof savedCfg === 'object') {
+          state.gmailConfig = { ...state.gmailConfig, ...savedCfg };
+        }
+      } catch (e) {}
+
+      // Load Cards & Cash metadata
+      try {
+        const savedCards = JSON.parse(localStorage.getItem(STORAGE_KEYS.CARDS_META));
+        if (savedCards && Array.isArray(savedCards.cards)) {
+          state.cardsMeta = savedCards.cards;
+          state.openingCashInHand = Number(savedCards.openingCashInHand) || 0;
+        }
+      } catch (e) {}
+
+      document.getElementById('apps-script-code-box').value = getGoogleAppsScriptTemplate();
+      document.getElementById('gmail-webapp-url').value = state.gmailConfig.webAppUrl || '';
+
+      populateTransferAccountSelects();
+      populateYearPicker();
+      renderColorSwatches();
+      setEntryType('expense');
+      updateDemoButtonVisibility();
+      updateAlertBadges();
+      switchTab('overview');
+      setTimeframe('monthly');
+      lucide.createIcons();
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEYS.TX, JSON.stringify(state.transactions));
+      localStorage.setItem(STORAGE_KEYS.CATS, JSON.stringify(state.categories));
+      localStorage.setItem(STORAGE_KEYS.DEMO, state.isDemo ? 'true' : 'false');
+      localStorage.setItem(STORAGE_KEYS.PENDING_ALERTS, JSON.stringify(state.pendingAlerts));
+      localStorage.setItem(STORAGE_KEYS.AUTO_APPROVED_LOG, JSON.stringify(state.autoApprovedLog.slice(0, 15)));
+      localStorage.setItem(STORAGE_KEYS.GMAIL_CONFIG, JSON.stringify(state.gmailConfig));
+      localStorage.setItem(STORAGE_KEYS.CARDS_META, JSON.stringify({
+        cards: state.cardsMeta,
+        openingCashInHand: state.openingCashInHand
+      }));
+      updateDemoButtonVisibility();
+      updateAlertBadges();
+      populateYearPicker();
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
+      if (state.activeTab === 'analytics') renderAnalytics();
+    }
+
+    function updateDemoButtonVisibility() {
+      const banner = document.getElementById('demo-banner');
+      const desktopBtn = document.getElementById('demo-clear-desktop');
+      if (state.isDemo) {
+        banner.classList.remove('hidden');
+        desktopBtn.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+        desktopBtn.classList.add('hidden');
+      }
+    }
+
+    function confirmClearDemo() {
+      openConfirmModal(
+        'Clear Sample Data?',
+        'This will clear the sample demo transactions and alerts so you can start logging your real LKR finances cleanly.',
+        () => {
+          state.transactions = [];
+          state.pendingAlerts = [];
+          state.isDemo = false;
+          saveState();
+          refreshAllViews();
+          showToast('Sample data cleared! Ready for your real entries.');
+        }
+      );
+    }
+
+    // ==========================================
+    // 4. NAVIGATION & TIMEFRAME LOGIC
+    // ==========================================
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+      const target = document.getElementById(`tab-${tabName}`);
+      if (target) target.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isActive = btn.dataset.nav === tabName;
+        if (isActive) {
+          btn.classList.add('bg-emerald-500/15', 'text-emerald-600', 'dark:text-emerald-400');
+          btn.classList.remove('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+        } else {
+          btn.classList.remove('bg-emerald-500/15', 'text-emerald-600', 'dark:text-emerald-400');
+          btn.classList.add('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+        }
+      });
+
+      const titles = {
+        overview: 'RupeeFlow',
+        add: 'Add / Update Entry',
+        cards: 'Credit Cards & Cash',
+        alerts: 'Gmail Alerts',
+        transactions: 'Transaction History',
+        analytics: 'Analytics & Insights'
+      };
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) pageTitle.textContent = titles[tabName] || 'RupeeFlow';
+
+      if (tabName === 'analytics') renderAnalytics();
+      if (tabName === 'cards') renderCardsAndWallets();
+      if (tabName === 'alerts') renderAlertsTab();
+      if (tabName === 'transactions') renderTransactions();
+      if (tabName === 'overview') renderOverview();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function setTimeframe(tf) {
+      state.timeframe = tf;
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        if (btn.dataset.tf === tf) {
+          btn.classList.add('bg-white', 'dark:bg-slate-800', 'text-emerald-600', 'dark:text-emerald-400', 'shadow-sm');
+          btn.classList.remove('text-slate-500', 'dark:text-slate-400');
+        } else {
+          btn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-emerald-600', 'dark:text-emerald-400', 'shadow-sm');
+          btn.classList.add('text-slate-500', 'dark:text-slate-400');
+        }
+      });
+
+      document.getElementById('picker-daily').classList.toggle('hidden', tf !== 'daily');
+      document.getElementById('picker-monthly').classList.toggle('hidden', tf !== 'monthly');
+      document.getElementById('picker-annual').classList.toggle('hidden', tf !== 'annual');
+      document.getElementById('picker-all-label').classList.toggle('hidden', tf !== 'all');
+
+      refreshAllViews();
+    }
+
+    function populateYearPicker() {
+      const sel = document.getElementById('picker-annual');
+      const years = new Set([new Date().getFullYear().toString()]);
+      state.transactions.forEach(t => {
+        if (t.date && t.date.length >= 4) years.add(t.date.slice(0, 4));
+      });
+      const sorted = Array.from(years).sort((a, b) => b.localeCompare(a));
+      sel.innerHTML = sorted.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (!years.has(state.selectedYear)) state.selectedYear = sorted[0];
+      sel.value = state.selectedYear;
+    }
+
+    function onPeriodChange() {
+      state.selectedDate = document.getElementById('picker-daily').value || getTodayISO();
+      state.selectedMonth = document.getElementById('picker-monthly').value || getTodayISO().slice(0, 7);
+      state.selectedYear = document.getElementById('picker-annual').value || getTodayISO().slice(0, 4);
+      refreshAllViews();
+    }
+
+    function getPeriodDisplayLabel() {
+      if (state.timeframe === 'daily') return formatDisplayDate(state.selectedDate);
+      if (state.timeframe === 'monthly') {
+        const [y, m] = state.selectedMonth.split('-');
+        const d = new Date(Number(y), Number(m) - 1, 1);
+        return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      }
+      if (state.timeframe === 'annual') return `Year ${state.selectedYear}`;
+      return 'All-Time';
+    }
+
+    function getTimeframeTransactions() {
+      return state.transactions.filter(tx => {
+        if (!tx.date) return false;
+        if (state.timeframe === 'daily') return tx.date === state.selectedDate;
+        if (state.timeframe === 'monthly') return tx.date.startsWith(state.selectedMonth);
+        if (state.timeframe === 'annual') return tx.date.startsWith(state.selectedYear);
+        return true;
+      });
+    }
+
+    function refreshAllViews() {
+      populateCategoryDropdowns();
+      renderOverview();
+      renderCardsAndWallets();
+      renderAlertsTab();
+      renderTransactions();
+      if (state.activeTab === 'analytics') renderAnalytics();
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // 5. OVERVIEW RENDERING
+    // ==========================================
+    function renderOverview() {
+      const txs = getTimeframeTransactions();
+      document.getElementById('overview-period-label').innerHTML = `<i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${getPeriodDisplayLabel()}`;
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let fixedExpense = 0;
+      let variableExpense = 0;
+      const catTotals = {};
+
+      txs.forEach(tx => {
+        if (tx.type === 'transfer') return; // Never double-count card bill settlements
+        const amt = Number(tx.amount) || 0;
+        if (tx.type === 'income') {
+          totalIncome += amt;
+        } else {
+          totalExpense += amt;
+          if (tx.nature === 'fixed') fixedExpense += amt;
+          else variableExpense += amt;
+          catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + amt;
+        }
+      });
+
+      const net = totalIncome - totalExpense;
+      const netEl = document.getElementById('ov-net-balance');
+      netEl.textContent = formatLKR(net);
+      netEl.className = `text-3xl sm:text-4xl font-extrabold tracking-tight mt-1 ${net < 0 ? 'text-rose-400' : 'text-white'}`;
+
+      document.getElementById('ov-income').textContent = formatLKR(totalIncome);
+      document.getElementById('ov-expense').textContent = formatLKR(totalExpense);
+
+      const fixedPct = totalExpense > 0 ? Math.round((fixedExpense / totalExpense) * 100) : 0;
+      const varPct = totalExpense > 0 ? 100 - fixedPct : 0;
+
+      document.getElementById('ov-fixed-amt').textContent = formatLKR(fixedExpense);
+      document.getElementById('ov-fixed-pct').textContent = `${fixedPct}%`;
+      document.getElementById('ov-fixed-bar').style.width = `${fixedPct}%`;
+
+      document.getElementById('ov-var-amt').textContent = formatLKR(variableExpense);
+      document.getElementById('ov-var-pct').textContent = `${varPct}%`;
+      document.getElementById('ov-var-bar').style.width = `${varPct}%`;
+
+      // Top Categories
+      const topCatsEl = document.getElementById('ov-top-categories');
+      const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      if (sortedCats.length === 0) {
+        topCatsEl.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center">No expenses logged for ${getPeriodDisplayLabel()}.</p>`;
+      } else {
+        topCatsEl.innerHTML = sortedCats.map(([catId, amt]) => {
+          const cat = getCategoryById(catId);
+          const pct = totalExpense > 0 ? Math.round((amt / totalExpense) * 100) : 0;
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-slate-800 dark:text-slate-200 truncate pr-2">${escapeHTML(cat.name)}</span>
+                <span class="font-bold text-slate-900 dark:text-white shrink-0">${formatLKR(amt)} <span class="text-slate-400 font-medium">(${pct}%)</span></span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full rounded-full" style="width:${pct}%; background:${cat.color}"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Recent Entries
+      const recentEl = document.getElementById('ov-recent-list');
+      const sortedTxs = [...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+      if (sortedTxs.length === 0) {
+        recentEl.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center">No entries recorded in this period.</p>`;
+      } else {
+        recentEl.innerHTML = sortedTxs.map(tx => renderTransactionRowCompact(tx)).join('');
+      }
+    }
+
+    function renderTransactionRowCompact(tx) {
+      const cat = getCategoryById(tx.categoryId);
+      const isInc = tx.type === 'income';
+      const isTransfer = tx.type === 'transfer';
+      const badgeBg = isTransfer ? '#6366f125' : `${cat.color}25`;
+      const badgeColor = isTransfer ? '#818cf8' : cat.color;
+      const symbol = isTransfer ? '⇄' : (isInc ? '+' : '−');
+      const amtColor = isTransfer ? 'text-indigo-400' : (isInc ? 'text-emerald-500' : 'text-slate-900 dark:text-slate-100');
+      const subtitle = isTransfer
+        ? `${escapeHTML(tx.method)} → ${escapeHTML(tx.toAccount || '')} • ${formatDisplayDate(tx.date)}`
+        : `${escapeHTML(cat.name)} • ${formatDisplayDate(tx.date)}`;
+
+      return `
+        <div onclick="editTransaction('${tx.id}')" class="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-xs" style="background:${badgeBg}; color:${badgeColor}">
+              ${symbol}
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">${escapeHTML(tx.title)}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${subtitle}</p>
+            </div>
+          </div>
+          <span class="text-sm font-bold shrink-0 ${amtColor}">
+            ${isTransfer ? '' : (isInc ? '+ ' : '- ')}${formatLKR(tx.amount)}
+          </span>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 6. TRANSACTIONS HISTORY RENDERING
+    // ==========================================
+    function renderTransactions() {
+      const search = (document.getElementById('tx-search').value || '').toLowerCase().trim();
+      const fType = document.getElementById('tx-filter-type').value;
+      const fNature = document.getElementById('tx-filter-nature').value;
+      const fCat = document.getElementById('tx-filter-category').value;
+      const fMethod = document.getElementById('tx-filter-method').value;
+
+      const filtered = getTimeframeTransactions()
+        .filter(tx => {
+          if (fType !== 'all' && tx.type !== fType) return false;
+          if (fNature !== 'all' && (tx.type !== 'expense' || tx.nature !== fNature)) return false;
+          if (fCat !== 'all' && tx.categoryId !== fCat) return false;
+          if (fMethod !== 'all' && tx.method !== fMethod && tx.toAccount !== fMethod) return false;
+          if (search) {
+            const cat = getCategoryById(tx.categoryId);
+            const hay = `${tx.title} ${cat.name} ${tx.method} ${tx.toAccount || ''}`.toLowerCase();
+            if (!hay.includes(search)) return false;
+          }
+          return true;
+        })
+        .sort((a, b) => b.date.localeCompare(a.date));
+
+      let sumIn = 0;
+      let sumOut = 0;
+      filtered.forEach(t => {
+        if (t.type === 'transfer') return;
+        if (t.type === 'income') sumIn += Number(t.amount);
+        else sumOut += Number(t.amount);
+      });
+
+      document.getElementById('tx-count-label').textContent = `${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'} (${getPeriodDisplayLabel()})`;
+      document.getElementById('tx-filtered-in').textContent = `+ ${formatLKR(sumIn)}`;
+      document.getElementById('tx-filtered-out').textContent = `- ${formatLKR(sumOut)}`;
+
+      const listEl = document.getElementById('transactions-list');
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 text-center">
+            <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">No matching transactions found</p>
+            <p class="text-xs text-slate-400 mt-1">Try changing the timeframe at the top or add a new payment.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(tx => {
+        const cat = getCategoryById(tx.categoryId);
+        const isInc = tx.type === 'income';
+        const isTransfer = tx.type === 'transfer';
+        const natureBadge = isTransfer
+          ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/15 text-indigo-400">Card Settlement / Transfer</span>`
+          : (!isInc
+              ? (tx.nature === 'fixed'
+                  ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/15 text-indigo-400">Fixed Bill/Loan</span>`
+                  : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-500">Daily Spend</span>`)
+              : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-500">Income</span>`);
+
+        const pillBg = isTransfer ? 'rgba(99, 102, 241, 0.15)' : `${cat.color}20`;
+        const pillColor = isTransfer ? '#818cf8' : cat.color;
+        const pillText = isTransfer ? '⇄' : (isInc ? 'IN' : 'OUT');
+        const subLine = isTransfer
+          ? `<span class="font-medium text-indigo-400">${escapeHTML(tx.method)} → ${escapeHTML(tx.toAccount || '')}</span> • ${formatDisplayDate(tx.date)}`
+          : `<span class="font-medium" style="color:${cat.color}">${escapeHTML(cat.name)}</span> • ${formatDisplayDate(tx.date)}`;
+        const methodLine = isTransfer
+          ? 'Internal transfer (excluded from expense double-counting)'
+          : `Paid via ${escapeHTML(tx.method)}`;
+        const amtClass = isTransfer
+          ? 'text-indigo-400'
+          : (isInc ? 'text-emerald-500' : 'text-slate-900 dark:text-white');
+
+        return `
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 font-extrabold text-sm mt-0.5" style="background:${pillBg}; color:${pillColor}">
+                ${pillText}
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white truncate">${escapeHTML(tx.title)}</h4>
+                  ${natureBadge}
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${subLine}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">${methodLine}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+              <span class="text-base font-extrabold ${amtClass}">
+                ${isTransfer ? '' : (isInc ? '+ ' : '- ')}${formatLKR(tx.amount)}
+              </span>
+              <div class="flex items-center gap-1">
+                <button onclick="editTransaction('${tx.id}')" title="Edit" class="p-2 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+                <button onclick="deleteTransaction('${tx.id}')" title="Delete" class="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // 7. ADD / EDIT / DELETE TRANSACTIONS
+    // ==========================================
+    function populateCategoryDropdowns() {
+      const entrySel = document.getElementById('entry-category');
+      const filterSel = document.getElementById('tx-filter-category');
+
+      const targetType = state.entryType === 'income' ? 'income' : 'expense';
+      const currentVal = entrySel.value;
+      entrySel.innerHTML = state.categories
+        .filter(c => c.type === targetType)
+        .map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`)
+        .join('');
+      if (state.categories.some(c => c.id === currentVal && c.type === targetType)) {
+        entrySel.value = currentVal;
+      }
+
+      const prevFilter = filterSel.value;
+      filterSel.innerHTML = `<option value="all">All Categories</option>` +
+        state.categories.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('');
+      filterSel.value = prevFilter || 'all';
+    }
+
+    function onCategorySelectChange() {
+      if (state.entryType !== 'expense') return;
+      const cat = getCategoryById(document.getElementById('entry-category').value);
+      document.querySelectorAll('input[name="expenseNature"]').forEach(r => {
+        r.checked = r.value === cat.nature;
+      });
+    }
+
+    function applyManualPreset(title, categoryId, nature) {
+      setEntryType('expense');
+      document.getElementById('entry-category').value = categoryId;
+      document.getElementById('entry-title').value = title;
+      document.querySelectorAll('input[name="expenseNature"]').forEach(r => {
+        r.checked = r.value === nature;
+      });
+      document.getElementById('entry-amount').focus();
+    }
+
+    function populateTransferAccountSelects() {
+      const fromSel = document.getElementById('transfer-from');
+      const toSel = document.getElementById('transfer-to');
+      if (!fromSel || !toSel) return;
+
+      fromSel.innerHTML = ACCOUNT_OPTIONS.map(acc => `<option value="${acc}">${acc}</option>`).join('');
+      toSel.innerHTML = ['NTB Amex', 'Seylan Visa', 'HNB Visa', 'Cash in Hand', 'Online Banking / Transfer']
+        .map(acc => `<option value="${acc}">${acc}</option>`).join('');
+
+      fromSel.value = 'Online Banking / Transfer';
+      toSel.value = 'NTB Amex';
+    }
+
+    function autoUpdateTransferTitle() {
+      if (state.entryType !== 'transfer') return;
+      const fromAcc = document.getElementById('transfer-from').value;
+      const toAcc = document.getElementById('transfer-to').value;
+      const titleInput = document.getElementById('entry-title');
+      if (toAcc === 'Cash in Hand') {
+        titleInput.value = `Cash in Hand Withdrawal (${fromAcc})`;
+      } else if (['NTB Amex', 'Seylan Visa', 'HNB Visa'].includes(toAcc)) {
+        titleInput.value = `Card Settlement: ${fromAcc} → ${toAcc}`;
+      } else {
+        titleInput.value = `Transfer: ${fromAcc} → ${toAcc}`;
+      }
+    }
+
+    function setEntryType(type) {
+      state.entryType = type;
+      const btnExp = document.getElementById('btn-type-expense');
+      const btnInc = document.getElementById('btn-type-income');
+      const btnTrf = document.getElementById('btn-type-transfer');
+
+      const natureWrap = document.getElementById('expense-nature-wrapper');
+      const catWrap = document.getElementById('entry-category-wrapper');
+      const trfWrap = document.getElementById('transfer-accounts-wrapper');
+      const trfBanner = document.getElementById('transfer-info-banner');
+      const methodWrap = document.getElementById('entry-method-wrapper');
+      const presetsBar = document.getElementById('manual-presets-bar');
+
+      const inactiveClass = 'py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition text-slate-500 dark:text-slate-400';
+      btnExp.className = inactiveClass;
+      btnInc.className = inactiveClass;
+      btnTrf.className = inactiveClass;
+
+      if (type === 'expense') {
+        btnExp.className = 'py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition bg-rose-600 text-white shadow-md shadow-rose-600/20';
+        natureWrap.classList.remove('hidden');
+        catWrap.classList.remove('hidden');
+        methodWrap.classList.remove('hidden');
+        presetsBar.classList.remove('hidden');
+        trfWrap.classList.add('hidden');
+        trfBanner.classList.add('hidden');
+      } else if (type === 'income') {
+        btnInc.className = 'py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition bg-emerald-600 text-white shadow-md shadow-emerald-600/20';
+        natureWrap.classList.add('hidden');
+        catWrap.classList.remove('hidden');
+        methodWrap.classList.remove('hidden');
+        presetsBar.classList.add('hidden');
+        trfWrap.classList.add('hidden');
+        trfBanner.classList.add('hidden');
+      } else {
+        btnTrf.className = 'py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition bg-indigo-600 text-white shadow-md shadow-indigo-600/20';
+        natureWrap.classList.add('hidden');
+        catWrap.classList.add('hidden');
+        methodWrap.classList.add('hidden');
+        presetsBar.classList.add('hidden');
+        trfWrap.classList.remove('hidden');
+        trfBanner.classList.remove('hidden');
+        autoUpdateTransferTitle();
+      }
+
+      if (type !== 'transfer') {
+        populateCategoryDropdowns();
+        onCategorySelectChange();
+      }
+    }
+
+    function resetEntryForm() {
+      document.getElementById('entry-form').reset();
+      document.getElementById('entry-id').value = '';
+      document.getElementById('entry-date').value = getTodayISO();
+      document.getElementById('form-heading').textContent = 'Add New Entry';
+      document.getElementById('cancel-edit-btn').classList.add('hidden');
+      document.getElementById('submit-entry-btn').innerHTML = `<i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Save Entry</span>`;
+      setEntryType('expense');
+      lucide.createIcons();
+    }
+
+    document.getElementById('entry-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const id = document.getElementById('entry-id').value;
+      const amount = parseFloat(document.getElementById('entry-amount').value);
+      const isTransfer = state.entryType === 'transfer';
+      const categoryId = isTransfer ? 'exp-cards' : document.getElementById('entry-category').value;
+      const title = document.getElementById('entry-title').value.trim();
+      const date = document.getElementById('entry-date').value;
+      const method = isTransfer
+        ? document.getElementById('transfer-from').value
+        : document.getElementById('entry-method').value;
+      const toAccount = isTransfer ? document.getElementById('transfer-to').value : '';
+      const natureEl = document.querySelector('input[name="expenseNature"]:checked');
+      const nature = state.entryType === 'expense' ? (natureEl ? natureEl.value : 'variable') : 'fixed';
+
+      if (!amount || amount <= 0 || !title || !date) {
+        showToast('Please enter a valid LKR amount, title, and date.', 'error');
+        return;
+      }
+
+      if (isTransfer && method === toAccount) {
+        showToast('From Account and To Card/Wallet cannot be the same.', 'error');
+        return;
+      }
+
+      if (id) {
+        const idx = state.transactions.findIndex(t => t.id === id);
+        if (idx !== -1) {
+          state.transactions[idx] = { ...state.transactions[idx], type: state.entryType, amount, categoryId, title, date, method, toAccount, nature };
+          showToast('Transaction updated!');
+        }
+      } else {
+        state.transactions.unshift({
+          id: 'tx-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          type: state.entryType,
+          amount,
+          categoryId,
+          title,
+          date,
+          method,
+          toAccount,
+          nature
+        });
+        const label = isTransfer ? 'Card payment / transfer' : (state.entryType === 'income' ? 'Income' : 'Payment');
+        showToast(`${label} of ${formatLKR(amount)} saved!`);
+      }
+
+      saveState();
+      resetEntryForm();
+      refreshAllViews();
+      switchTab(isTransfer ? 'cards' : 'overview');
+    });
+
+    function editTransaction(id) {
+      const tx = state.transactions.find(t => t.id === id);
+      if (!tx) return;
+
+      switchTab('add');
+      document.getElementById('form-heading').textContent = 'Update Transaction';
+      document.getElementById('cancel-edit-btn').classList.remove('hidden');
+      document.getElementById('submit-entry-btn').innerHTML = `<i data-lucide="save" class="w-5 h-5"></i><span>Update Transaction</span>`;
+
+      document.getElementById('entry-id').value = tx.id;
+      setEntryType(tx.type);
+      document.getElementById('entry-amount').value = tx.amount;
+      if (tx.type === 'transfer') {
+        document.getElementById('transfer-from').value = tx.method || 'Online Banking / Transfer';
+        document.getElementById('transfer-to').value = tx.toAccount || 'NTB Amex';
+      } else {
+        document.getElementById('entry-category').value = tx.categoryId;
+        document.getElementById('entry-method').value = tx.method;
+      }
+      document.getElementById('entry-title').value = tx.title;
+      document.getElementById('entry-date').value = tx.date;
+
+      if (tx.type === 'expense') {
+        document.querySelectorAll('input[name="expenseNature"]').forEach(r => {
+          r.checked = r.value === tx.nature;
+        });
+      }
+      lucide.createIcons();
+    }
+
+    function deleteTransaction(id) {
+      const tx = state.transactions.find(t => t.id === id);
+      if (!tx) return;
+      openConfirmModal(
+        'Delete Entry?',
+        `Are you sure you want to remove "${tx.title}" (${formatLKR(tx.amount)})?`,
+        () => {
+          state.transactions = state.transactions.filter(t => t.id !== id);
+          saveState();
+          refreshAllViews();
+          showToast('Transaction deleted.');
+        }
+      );
+    }
+
+    // ==========================================
+    // 8. CUSTOM CATEGORIES MODAL
+    // ==========================================
+    function renderColorSwatches() {
+      const wrap = document.getElementById('cat-color-swatches');
+      wrap.innerHTML = SWATCH_COLORS.map(color => `
+        <button type="button" onclick="selectSwatch('${color}')" class="w-7 h-7 rounded-full border-2 transition ${state.selectedSwatch === color ? 'border-white scale-110 ring-2 ring-emerald-500' : 'border-transparent'}" style="background:${color}"></button>
+      `).join('');
+    }
+
+    function selectSwatch(color) {
+      state.selectedSwatch = color;
+      renderColorSwatches();
+    }
+
+    function openCategoryModal() {
+      document.getElementById('cat-name-input').value = '';
+      document.getElementById('cat-type-input').value = state.entryType === 'income' ? 'income' : 'expense';
+      const modal = document.getElementById('category-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('cat-name-input').focus();
+    }
+
+    function closeCategoryModal() {
+      const modal = document.getElementById('category-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.getElementById('category-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('cat-name-input').value.trim();
+      const type = document.getElementById('cat-type-input').value;
+      const nature = document.getElementById('cat-nature-input').value;
+      if (!name) return;
+
+      const newCat = {
+        id: 'cat-' + Date.now(),
+        name,
+        type,
+        nature,
+        color: state.selectedSwatch,
+        custom: true
+      };
+      state.categories.push(newCat);
+      saveState();
+      populateCategoryDropdowns();
+      if (state.entryType === type) {
+        document.getElementById('entry-category').value = newCat.id;
+      }
+      closeCategoryModal();
+      showToast(`Category "${name}" created!`);
+    });
+
+    // ==========================================
+    // 9. CREDIT CARDS & CASH IN HAND WALLETS
+    // ==========================================
+    function computeCardsAndWalletsBalances() {
+      const cardStats = {};
+      state.cardsMeta.forEach(c => {
+        cardStats[c.id] = { ...c, used: Number(c.openingUsed) || 0, spentAllTime: 0, paidAllTime: 0 };
+      });
+
+      let cashInHand = Number(state.openingCashInHand) || 0;
+      let cashSpent = 0;
+      let cashAdded = 0;
+
+      // Accumulate all spends and settlements without clamping mid-loop
+      // so newest-first transaction ordering never erases card bill payments.
+      state.transactions.forEach(tx => {
+        const amt = Number(tx.amount) || 0;
+        const fromAcc = (tx.method || '').trim();
+        const toAcc = (tx.toAccount || '').trim();
+
+        if (tx.type === 'expense') {
+          if (cardStats[fromAcc]) {
+            cardStats[fromAcc].used += amt;
+            cardStats[fromAcc].spentAllTime += amt;
+          } else if (fromAcc === 'Cash in Hand') {
+            cashInHand -= amt;
+            cashSpent += amt;
+          }
+        } else if (tx.type === 'income') {
+          if (fromAcc === 'Cash in Hand') {
+            cashInHand += amt;
+            cashAdded += amt;
+          }
+        } else if (tx.type === 'transfer') {
+          if (fromAcc === 'Cash in Hand') {
+            cashInHand -= amt;
+          } else if (cardStats[fromAcc]) {
+            cardStats[fromAcc].used += amt;
+            cardStats[fromAcc].spentAllTime += amt;
+          }
+
+          if (toAcc === 'Cash in Hand') {
+            cashInHand += amt;
+            cashAdded += amt;
+          } else if (cardStats[toAcc]) {
+            cardStats[toAcc].used -= amt;
+            cardStats[toAcc].paidAllTime += amt;
+          }
+        }
+      });
+
+      return { cardStats, cashInHand, cashSpent, cashAdded };
+    }
+
+    function renderCardsAndWallets() {
+      const { cardStats, cashInHand, cashSpent, cashAdded } = computeCardsAndWalletsBalances();
+
+      let totalLimit = 0;
+      let totalUsed = 0;
+
+      const cardsGrid = document.getElementById('credit-cards-grid');
+      if (!cardsGrid) return;
+
+      cardsGrid.innerHTML = state.cardsMeta.map(c => {
+        const info = cardStats[c.id];
+        const limit = Number(info.limit) || 0;
+        const used = Math.max(0, info.used);
+        const available = Math.max(0, limit - used);
+        const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+        totalLimit += limit;
+        totalUsed += used;
+
+        return `
+          <div class="rounded-3xl bg-gradient-to-br ${info.gradient} p-5 text-white shadow-lg flex flex-col justify-between space-y-4">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-white/75">${escapeHTML(info.bank)}</p>
+                <h4 class="text-lg font-extrabold tracking-tight mt-0.5">${escapeHTML(info.name)}</h4>
+              </div>
+              <span class="px-2.5 py-1 rounded-xl bg-black/25 text-[11px] font-bold">${pct}% Used</span>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-white/80">Outstanding Due</span>
+                <span class="font-extrabold text-white">${formatLKR(used)}</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-white/80">Available Limit</span>
+                <span class="font-bold text-emerald-200">${formatLKR(available)}</span>
+              </div>
+              <div class="w-full h-2 bg-black/30 rounded-full overflow-hidden mt-2">
+                <div class="h-full bg-white rounded-full transition-all duration-500" style="width:${pct}%"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-white/75 pt-1">
+                <span>Limit: ${formatLKR(limit)}</span>
+                <span>Spent: ${formatLKR(info.spentAllTime)} • Paid: ${formatLKR(info.paidAllTime)}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button onclick="openQuickCardSpend('${info.name}')" class="py-2 px-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-xs font-bold transition text-center">
+                + Card Spend
+              </button>
+              <button onclick="openQuickTransfer('Online Banking / Transfer', '${info.name}', ${used})" class="py-2 px-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs font-extrabold transition text-center">
+                Pay Card Bill
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('cards-total-used').textContent = formatLKR(totalUsed);
+      document.getElementById('cards-total-avail').textContent = formatLKR(Math.max(0, totalLimit - totalUsed));
+      document.getElementById('wallet-cash-balance').textContent = formatLKR(cashInHand);
+
+      const walletsGrid = document.getElementById('cash-wallets-grid');
+      walletsGrid.innerHTML = `
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+              <i data-lucide="wallet" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-base text-slate-900 dark:text-white">Cash in Hand (Wallet)</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Physical cash for rides, tips & small purchases</p>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-semibold">Current Cash Balance</p>
+            <p class="text-2xl font-extrabold ${cashInHand < 0 ? 'text-rose-500' : 'text-amber-500'} mt-0.5">${formatLKR(cashInHand)}</p>
+            <p class="text-[11px] text-slate-400 mt-1">Added: ${formatLKR(cashAdded)} • Spent: ${formatLKR(cashSpent)}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="openQuickTransfer('Online Banking / Transfer', 'Cash in Hand')" class="py-2.5 px-3 rounded-xl bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 text-xs font-bold transition">
+              + Withdraw Cash (ATM)
+            </button>
+            <button onclick="openQuickCardSpend('Cash in Hand')" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold transition">
+              − Spend Cash
+            </button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+              <i data-lucide="info" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-base text-slate-900 dark:text-white">How Double-Counting is Solved</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                1. When you buy lunch with <strong>NTB Amex</strong>, log it as an <strong>Expense</strong> paid via <em>NTB Amex</em>. It counts as an expense & increases your card due.<br/>
+                2. When you transfer money from your bank to pay <strong>NTB Amex</strong>, tap <strong>Pay Card Bill</strong>. It clears your card due <em>without</em> deducting twice from your income!
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const transfers = state.transactions
+        .filter(t => t.type === 'transfer')
+        .sort((a, b) => b.date.localeCompare(a.date));
+
+      const trfList = document.getElementById('card-transfers-list');
+      if (transfers.length === 0) {
+        trfList.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No card bill settlements or ATM cash withdrawals recorded yet.</p>`;
+      } else {
+        trfList.innerHTML = transfers.slice(0, 10).map(tx => renderTransactionRowCompact(tx)).join('');
+      }
+    }
+
+    function openQuickCardSpend(methodName) {
+      switchTab('add');
+      resetEntryForm();
+      setEntryType('expense');
+      document.getElementById('entry-method').value = methodName;
+      document.getElementById('entry-amount').focus();
+    }
+
+    function openQuickTransfer(fromAcc, toAcc, suggestedAmount = 0) {
+      switchTab('add');
+      resetEntryForm();
+      setEntryType('transfer');
+      document.getElementById('transfer-from').value = fromAcc;
+      document.getElementById('transfer-to').value = toAcc;
+      autoUpdateTransferTitle();
+      if (suggestedAmount > 0) {
+        document.getElementById('entry-amount').value = suggestedAmount;
+      }
+      document.getElementById('entry-amount').focus();
+    }
+
+    // ==========================================
+    // 10. ANALYTICS & CHARTS
+    // ==========================================
+    function renderAnalytics() {
+      const txs = getTimeframeTransactions();
+      let totalIn = 0;
+      let totalOut = 0;
+      const catTotals = {};
+      const methodTotals = {};
+
+      txs.forEach(tx => {
+        if (tx.type === 'transfer') return;
+        const amt = Number(tx.amount) || 0;
+        if (tx.type === 'income') {
+          totalIn += amt;
+        } else {
+          totalOut += amt;
+          catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + amt;
+          methodTotals[tx.method] = (methodTotals[tx.method] || 0) + amt;
+        }
+      });
+
+      // Top Category
+      const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+      if (sortedCats.length > 0) {
+        const topCat = getCategoryById(sortedCats[0][0]);
+        document.getElementById('an-top-cat').textContent = topCat.name;
+        document.getElementById('an-top-cat-amt').textContent = formatLKR(sortedCats[0][1]);
+      } else {
+        document.getElementById('an-top-cat').textContent = 'No Expenses';
+        document.getElementById('an-top-cat-amt').textContent = 'LKR 0';
+      }
+
+      // Savings Rate
+      if (totalIn > 0) {
+        const rate = Math.round(((totalIn - totalOut) / totalIn) * 100);
+        document.getElementById('an-savings-rate').textContent = `${rate}%`;
+        document.getElementById('an-savings-rate').className = `text-lg font-extrabold mt-1 ${rate < 0 ? 'text-rose-500' : 'text-emerald-500'}`;
+        document.getElementById('an-savings-note').textContent = `Saved ${formatLKR(totalIn - totalOut)} of ${formatLKR(totalIn)}`;
+      } else {
+        document.getElementById('an-savings-rate').textContent = '0%';
+        document.getElementById('an-savings-note').textContent = 'Log income to calculate savings rate';
+      }
+
+      // Most Used Payment Method
+      const sortedMethods = Object.entries(methodTotals).sort((a, b) => b[1] - a[1]);
+      if (sortedMethods.length > 0) {
+        document.getElementById('an-top-method').textContent = sortedMethods[0][0];
+        document.getElementById('an-top-method-amt').textContent = formatLKR(sortedMethods[0][1]);
+      } else {
+        document.getElementById('an-top-method').textContent = '—';
+        document.getElementById('an-top-method-amt').textContent = 'LKR 0';
+      }
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const tickColor = isDark ? '#94a3b8' : '#475569';
+      const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.06)';
+
+      // Donut Chart
+      const donutCanvas = document.getElementById('chart-expense-donut');
+      const donutEmpty = document.getElementById('donut-empty-msg');
+      const legendEl = document.getElementById('an-category-legend');
+
+      if (donutChart) donutChart.destroy();
+
+      if (sortedCats.length === 0) {
+        donutEmpty.classList.remove('hidden');
+        legendEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Add expenses to view category breakdown.</p>`;
+      } else {
+        donutEmpty.classList.add('hidden');
+        const labels = sortedCats.map(([id]) => getCategoryById(id).name);
+        const data = sortedCats.map(([, amt]) => amt);
+        const colors = sortedCats.map(([id]) => getCategoryById(id).color);
+
+        donutChart = new Chart(donutCanvas, {
+          type: 'doughnut',
+          data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: { legend: { display: false } }
+          }
+        });
+
+        legendEl.innerHTML = sortedCats.map(([id, amt]) => {
+          const cat = getCategoryById(id);
+          const pct = totalOut > 0 ? Math.round((amt / totalOut) * 100) : 0;
+          return `
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-3 h-3 rounded-full shrink-0" style="background:${cat.color}"></span>
+                <span class="font-semibold text-slate-700 dark:text-slate-200 truncate">${escapeHTML(cat.name)}</span>
+              </div>
+              <span class="font-bold text-slate-900 dark:text-white shrink-0">${formatLKR(amt)} <span class="text-slate-400">(${pct}%)</span></span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Annual Bar Chart
+      const trendYear = state.timeframe === 'annual' ? state.selectedYear : state.selectedMonth.slice(0, 4);
+      document.getElementById('an-trend-year').textContent = trendYear;
+
+      const monthlyIncome = new Array(12).fill(0);
+      const monthlyExpense = new Array(12).fill(0);
+
+      state.transactions.forEach(tx => {
+        if (tx.type === 'transfer') return;
+        if (tx.date && tx.date.startsWith(trendYear)) {
+          const mIdx = parseInt(tx.date.slice(5, 7), 10) - 1;
+          if (mIdx >= 0 && mIdx < 12) {
+            if (tx.type === 'income') monthlyIncome[mIdx] += Number(tx.amount) || 0;
+            else monthlyExpense[mIdx] += Number(tx.amount) || 0;
+          }
+        }
+      });
+
+      const barCanvas = document.getElementById('chart-annual-bar');
+      if (barChart) barChart.destroy();
+      barChart = new Chart(barCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [
+            { label: 'Income', data: monthlyIncome, backgroundColor: '#10b981', borderRadius: 6 },
+            { label: 'Expenses', data: monthlyExpense, backgroundColor: '#f43f5e', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: tickColor, font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: tickColor, font: { size: 10 } }, grid: { color: gridColor } }
+          },
+          plugins: {
+            legend: { labels: { color: tickColor, font: { size: 11, weight: 'bold' } } }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // 11. GMAIL ALERTS & APPROVAL ENGINE
+    // ==========================================
+    const SIMULATED_POOL = [
+      { source: 'HNB', type: 'expense', amount: 12500, categoryId: 'exp-utility', title: 'HNB Visa — Dialog / CEB Bill', method: 'HNB Visa', nature: 'fixed', snippet: 'HNB Card Alert: LKR 12,500.00 charged on HNB Visa Card.' },
+      { source: 'Uber', type: 'expense', amount: 1640, categoryId: 'exp-rides', title: 'Uber Trip Receipt — Colombo', method: 'NTB Amex', nature: 'variable', snippet: 'Your evening trip with Uber: Total LKR 1,640.00.' },
+      { source: 'Subscriptions', type: 'expense', amount: 2950, categoryId: 'exp-subs', title: 'Google One / Netflix Subscription', method: 'Seylan Visa', nature: 'fixed', snippet: 'Receipt from Netflix/Google: LKR 2,950.00.' },
+      { source: 'Seylan Bank', type: 'expense', amount: 7400, categoryId: 'exp-groceries', title: 'Seylan Visa — Cargills Food City', method: 'Seylan Visa', nature: 'variable', snippet: 'Seylan Card Alert: LKR 7,400.00 approved at CARGILLS FOOD CITY.' },
+      { source: 'NTB / Amex', type: 'transfer', amount: 25000, categoryId: 'exp-cards', title: 'Card Settlement: Bank → NTB Amex', method: 'Online Banking / Transfer', toAccount: 'NTB Amex', nature: 'fixed', snippet: 'NTB Amex Payment Received: Thank you for your payment of LKR 25,000.00.' },
+      { source: 'PickMe', type: 'expense', amount: 2150, categoryId: 'exp-food', title: 'PickMe Food Order Receipt', method: 'HNB Visa', nature: 'variable', snippet: 'Your PickMe Food order total of LKR 2,150.00 has been paid.' }
+    ];
+
+    function updateAlertBadges() {
+      const count = state.pendingAlerts.length;
+      document.querySelectorAll('.alert-badge-count').forEach(badge => {
+        badge.textContent = count > 9 ? '9+' : String(count);
+        badge.classList.toggle('hidden', count === 0);
+      });
+    }
+
+    function renderAlertsTab() {
+      const connected = Boolean(state.gmailConfig.webAppUrl);
+      document.getElementById('gmail-status-dot').className = `w-2.5 h-2.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`;
+      document.getElementById('gmail-status-text').textContent = connected ? 'Connected to Gmail Bridge' : 'Simulator Mode (Not Connected)';
+
+      const toggle = document.getElementById('toggle-auto-approve');
+      toggle.checked = state.gmailConfig.autoApproveEnabled;
+      document.getElementById('trusted-sources-wrap').classList.toggle('hidden', !state.gmailConfig.autoApproveEnabled);
+
+      // Trusted Source Chips
+      document.getElementById('trusted-sources-chips').innerHTML = ALL_GMAIL_SOURCES.map(src => {
+        const active = state.gmailConfig.trustedSources.includes(src);
+        return `
+          <button type="button" onclick="toggleTrustedSource('${src}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${active ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'}">
+            ${active ? '✓ ' : '+ '}${src}
+          </button>
+        `;
+      }).join('');
+
+      // Pending Alerts
+      const count = state.pendingAlerts.length;
+      document.getElementById('pending-count-inline').textContent = count;
+      document.getElementById('btn-approve-all').classList.toggle('hidden', count < 2);
+
+      const listEl = document.getElementById('pending-alerts-list');
+      if (count === 0) {
+        listEl.innerHTML = `
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center">
+            <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">All caught up! No pending Gmail alerts.</p>
+            <p class="text-xs text-slate-400 mt-1">Tap "Test Alert" to simulate a bank email or "Connect Gmail" to link your real inbox.</p>
+          </div>
+        `;
+      } else {
+        listEl.innerHTML = state.pendingAlerts.map(alert => {
+          const cat = getCategoryById(alert.categoryId);
+          const isTransfer = alert.type === 'transfer';
+          return `
+            <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-3 shadow-sm">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/15 text-indigo-400">${escapeHTML(alert.source)}</span>
+                    <span class="text-[11px] text-slate-400">${formatDisplayDate(alert.date)}</span>
+                  </div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white mt-1">${escapeHTML(alert.title)}</h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">${escapeHTML(alert.snippet || '')}</p>
+                  <p class="text-[11px] font-semibold mt-1 text-slate-400">
+                    ${isTransfer ? `Card Settlement → ${escapeHTML(alert.toAccount || '')}` : `${escapeHTML(cat.name)} • ${escapeHTML(alert.method || '')}`}
+                  </p>
+                </div>
+                <span class="text-base font-extrabold shrink-0 ${isTransfer ? 'text-indigo-400' : (alert.type === 'income' ? 'text-emerald-500' : 'text-rose-500')}">
+                  ${formatLKR(alert.amount)}
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button onclick="approvePendingAlert('${alert.id}')" class="py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+                  Approve
+                </button>
+                <button onclick="openEditAlertModal('${alert.id}')" class="py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition">
+                  Edit
+                </button>
+                <button onclick="dismissPendingAlert('${alert.id}')" class="py-2 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold text-xs transition">
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Auto-approved Undo log
+      const autoSec = document.getElementById('auto-approved-section');
+      const autoList = document.getElementById('auto-approved-list');
+      if (state.autoApprovedLog.length === 0) {
+        autoSec.classList.add('hidden');
+      } else {
+        autoSec.classList.remove('hidden');
+        autoList.innerHTML = state.autoApprovedLog.map(item => `
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
+            <div class="min-w-0">
+              <p class="font-bold text-slate-800 dark:text-slate-100 truncate">${escapeHTML(item.title)}</p>
+              <p class="text-[11px] text-slate-400">${escapeHTML(item.source)} • ${formatLKR(item.amount)}</p>
+            </div>
+            <button onclick="undoAutoApproved('${item.txId}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-500 font-bold">Undo</button>
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleAutoApprove() {
+      state.gmailConfig.autoApproveEnabled = document.getElementById('toggle-auto-approve').checked;
+      saveState();
+      renderAlertsTab();
+    }
+
+    function toggleTrustedSource(src) {
+      const idx = state.gmailConfig.trustedSources.indexOf(src);
+      if (idx === -1) state.gmailConfig.trustedSources.push(src);
+      else state.gmailConfig.trustedSources.splice(idx, 1);
+      saveState();
+      renderAlertsTab();
+    }
+
+    function ingestIncomingAlerts(alerts) {
+      let addedPending = 0;
+      let autoCount = 0;
+
+      alerts.forEach(alert => {
+        const existsPending = state.pendingAlerts.some(p => p.id === alert.id);
+        const existsTx = state.transactions.some(t => t.gmailAlertId === alert.id);
+        if (existsPending || existsTx) return;
+
+        const isTrusted = state.gmailConfig.trustedSources.includes(alert.source);
+        if (state.gmailConfig.autoApproveEnabled && isTrusted) {
+          const txId = 'tx-auto-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          state.transactions.unshift({
+            id: txId,
+            gmailAlertId: alert.id,
+            type: alert.type,
+            amount: Number(alert.amount),
+            categoryId: alert.categoryId,
+            title: alert.title,
+            date: alert.date || getTodayISO(),
+            method: alert.method || 'Online Banking / Transfer',
+            toAccount: alert.toAccount || (alert.type === 'transfer' ? 'NTB Amex' : ''),
+            nature: alert.nature || 'variable'
+          });
+          state.autoApprovedLog.unshift({ txId, title: alert.title, source: alert.source, amount: alert.amount });
+          acknowledgeAlertOnBridge(alert.id, 'approved');
+          autoCount++;
+        } else {
+          state.pendingAlerts.unshift(alert);
+          addedPending++;
+        }
+      });
+
+      saveState();
+      refreshAllViews();
+
+      if (autoCount > 0) showToast(`Auto-approved ${autoCount} trusted alert(s)!`);
+      if (addedPending > 0) showToast(`${addedPending} new Gmail alert(s) waiting for approval.`);
+    }
+
+    function simulateIncomingGmailAlert() {
+      const sample = SIMULATED_POOL[Math.floor(Math.random() * SIMULATED_POOL.length)];
+      ingestIncomingAlerts([{
+        ...sample,
+        id: 'sim-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+        date: getTodayISO()
+      }]);
+    }
+
+    function approvePendingAlert(alertId) {
+      const idx = state.pendingAlerts.findIndex(a => a.id === alertId);
+      if (idx === -1) return;
+      const alert = state.pendingAlerts[idx];
+
+      state.transactions.unshift({
+        id: 'tx-gmail-' + Date.now(),
+        gmailAlertId: alert.id,
+        type: alert.type,
+        amount: Number(alert.amount),
+        categoryId: alert.categoryId,
+        title: alert.title,
+        date: alert.date || getTodayISO(),
+        method: alert.method || 'Online Banking / Transfer',
+        toAccount: alert.toAccount || (alert.type === 'transfer' ? 'NTB Amex' : ''),
+        nature: alert.nature || 'variable'
+      });
+
+      state.pendingAlerts.splice(idx, 1);
+      saveState();
+      refreshAllViews();
+      acknowledgeAlertOnBridge(alert.id, 'approved');
+      showToast(`Approved & added ${formatLKR(alert.amount)}!`);
+    }
+
+    function approveAllPendingAlerts() {
+      const count = state.pendingAlerts.length;
+      if (count === 0) return;
+      state.pendingAlerts.forEach(alert => {
+        state.transactions.unshift({
+          id: 'tx-gmail-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+          gmailAlertId: alert.id,
+          type: alert.type,
+          amount: Number(alert.amount),
+          categoryId: alert.categoryId,
+          title: alert.title,
+          date: alert.date || getTodayISO(),
+          method: alert.method || 'Online Banking / Transfer',
+          toAccount: alert.toAccount || (alert.type === 'transfer' ? 'NTB Amex' : ''),
+          nature: alert.nature || 'variable'
+        });
+        acknowledgeAlertOnBridge(alert.id, 'approved');
+      });
+      state.pendingAlerts = [];
+      saveState();
+      refreshAllViews();
+      showToast(`Approved all ${count} alerts!`);
+    }
+
+    function dismissPendingAlert(alertId) {
+      state.pendingAlerts = state.pendingAlerts.filter(a => a.id !== alertId);
+      saveState();
+      refreshAllViews();
+      acknowledgeAlertOnBridge(alertId, 'dismissed');
+      showToast('Alert dismissed.');
+    }
+
+    function undoAutoApproved(txId) {
+      state.transactions = state.transactions.filter(t => t.id !== txId);
+      state.autoApprovedLog = state.autoApprovedLog.filter(l => l.txId !== txId);
+      saveState();
+      refreshAllViews();
+      showToast('Auto-approved transaction reverted.');
+    }
+
+    // Edit & Approve Modal
+    function openEditAlertModal(alertId) {
+      const alert = state.pendingAlerts.find(a => a.id === alertId);
+      if (!alert) return;
+      document.getElementById('edit-alert-id').value = alert.id;
+      document.getElementById('edit-alert-type').value = alert.type;
+      document.getElementById('edit-alert-method').value = alert.method || 'Online Banking / Transfer';
+      populateEditAlertCategories();
+      document.getElementById('edit-alert-amount').value = alert.amount;
+      document.getElementById('edit-alert-category').value = alert.categoryId;
+      document.getElementById('edit-alert-title').value = alert.title;
+      document.getElementById('edit-alert-date').value = alert.date || getTodayISO();
+      document.getElementById('edit-alert-nature').value = alert.nature || 'variable';
+
+      const modal = document.getElementById('edit-alert-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeEditAlertModal() {
+      const modal = document.getElementById('edit-alert-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function populateEditAlertCategories() {
+      const type = document.getElementById('edit-alert-type').value;
+      const select = document.getElementById('edit-alert-category');
+      const targetType = type === 'transfer' ? 'expense' : type;
+      select.innerHTML = state.categories
+        .filter(c => c.type === targetType)
+        .map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`)
+        .join('');
+    }
+
+    document.getElementById('edit-alert-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const alertId = document.getElementById('edit-alert-id').value;
+      const idx = state.pendingAlerts.findIndex(a => a.id === alertId);
+      if (idx === -1) return;
+
+      const original = state.pendingAlerts[idx];
+      const newType = document.getElementById('edit-alert-type').value;
+      const newMethod = document.getElementById('edit-alert-method').value;
+      state.pendingAlerts[idx] = {
+        ...original,
+        type: newType,
+        method: newType === 'transfer' ? 'Online Banking / Transfer' : newMethod,
+        toAccount: newType === 'transfer' ? (['NTB Amex', 'Seylan Visa', 'HNB Visa'].includes(newMethod) ? newMethod : 'NTB Amex') : '',
+        amount: parseFloat(document.getElementById('edit-alert-amount').value),
+        categoryId: document.getElementById('edit-alert-category').value,
+        title: document.getElementById('edit-alert-title').value.trim(),
+        date: document.getElementById('edit-alert-date').value,
+        nature: document.getElementById('edit-alert-nature').value
+      };
+      closeEditAlertModal();
+      approvePendingAlert(alertId);
+    });
+
+    // Gmail Setup Modal & Live Bridge Sync
+    function openGmailSetupModal() {
+      const modal = document.getElementById('gmail-setup-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGmailSetupModal() {
+      const modal = document.getElementById('gmail-setup-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function copyAppsScriptCode() {
+      const box = document.getElementById('apps-script-code-box');
+      box.select();
+      box.setSelectionRange(0, 99999);
+      try {
+        document.execCommand('copy');
+        showToast('Apps Script copied to clipboard!');
+      } catch (e) {
+        showToast('Select the text and copy manually.', 'error');
+      }
+    }
+
+    function saveGmailWebAppUrl() {
+      const url = document.getElementById('gmail-webapp-url').value.trim();
+      if (!url || !url.startsWith('https://script.google.com/')) {
+        showToast('Please paste a valid Google Apps Script Web App URL.', 'error');
+        return;
+      }
+      state.gmailConfig.webAppUrl = url;
+      saveState();
+      closeGmailSetupModal();
+      syncFromGmailBridge();
+    }
+
+    function disconnectGmailBridge() {
+      state.gmailConfig.webAppUrl = '';
+      document.getElementById('gmail-webapp-url').value = '';
+      saveState();
+      renderAlertsTab();
+      closeGmailSetupModal();
+      showToast('Disconnected from Gmail bridge.');
+    }
+
+    async function syncFromGmailBridge() {
+      if (!state.gmailConfig.webAppUrl) {
+        showToast('Connect your Gmail Web App URL first.', 'error');
+        openGmailSetupModal();
+        return;
+      }
+      showToast('Checking Gmail for new payments...');
+      try {
+        const res = await fetch(`${state.gmailConfig.webAppUrl}?action=fetch`);
+        const data = await res.json();
+        if (data && Array.isArray(data.alerts)) {
+          if (data.alerts.length === 0) showToast('No new payment emails found.');
+          else ingestIncomingAlerts(data.alerts);
+        } else {
+          showToast('Unexpected response from Gmail script.', 'error');
+        }
+      } catch (err) {
+        showToast('Could not reach Gmail script. Check deployment access.', 'error');
+      }
+    }
+
+    function acknowledgeAlertOnBridge(alertId, status) {
+      if (!state.gmailConfig.webAppUrl || alertId.startsWith('sim-') || alertId.startsWith('gmail-sim-')) return;
+      fetch(`${state.gmailConfig.webAppUrl}?action=ack&id=${encodeURIComponent(alertId)}&status=${status}`).catch(() => {});
+    }
+
+    function getGoogleAppsScriptTemplate() {
+      return `// RupeeFlow Gmail Payment Detector (Sri Lanka: Seylan, NTB Amex, HNB, Uber, PickMe, Subs)
+const USD_TO_LKR_RATE = 300;
+const LABEL_PROCESSED = 'RupeeFlow_Processed';
+
+function doGet(e) {
+  const action = (e.parameter.action || 'fetch');
+  if (action === 'ack' && e.parameter.id) {
+    markMessageProcessed(e.parameter.id);
+    return jsonResponse({ ok: true });
+  }
+  const alerts = scanRecentPaymentEmails();
+  return jsonResponse({ ok: true, alerts: alerts });
+}
+
+function scanRecentPaymentEmails() {
+  let label = GmailApp.getUserLabelByName(LABEL_PROCESSED);
+  if (!label) label = GmailApp.createLabel(LABEL_PROCESSED);
+
+  const query = '(seylan OR ntb OR "nations trust" OR amex OR hnb OR uber OR pickme OR netflix OR spotify OR dialog OR slt OR ceb) newer_than:7d -label:' + LABEL_PROCESSED;
+  const threads = GmailApp.search(query, 0, 20);
+  const alerts = [];
+
+  threads.forEach(thread => {
+    thread.getMessages().forEach(msg => {
+      const from = msg.getFrom();
+      const subject = msg.getSubject();
+      const body = msg.getPlainBody().slice(0, 2000);
+      const text = subject + ' ' + body;
+      const amount = extractLkrAmount(text);
+      if (!amount) return;
+
+      const isIncome = /(credited|salary|deposit|received from)/i.test(text) && !/(card|charged|spent|purchase)/i.test(text);
+      const info = classifySriLankanAlert(from, subject, text, isIncome);
+      alerts.push({
+        id: msg.getId(),
+        source: info.source,
+        type: info.type || (isIncome ? 'income' : 'expense'),
+        amount: amount,
+        categoryId: info.categoryId,
+        title: info.title,
+        date: Utilities.formatDate(msg.getDate(), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        method: info.method,
+        toAccount: info.toAccount || '',
+        nature: info.nature,
+        snippet: body.replace(/\\s+/g, ' ').slice(0, 140)
+      });
+    });
+  });
+  return alerts;
+}
+
+function extractLkrAmount(text) {
+  const lkrMatch = text.match(/(?:LKR|Rs\\.?|SLR)\\s*([0-9,]+(?:\\.[0-9]{1,2})?)/i);
+  if (lkrMatch) return parseFloat(lkrMatch[1].replace(/,/g, ''));
+  const usdMatch = text.match(/(?:USD|\\$)\\s*([0-9,]+(?:\\.[0-9]{1,2})?)/i);
+  if (usdMatch) return Math.round(parseFloat(usdMatch[1].replace(/,/g, '')) * USD_TO_LKR_RATE);
+  return null;
+}
+
+function classifySriLankanAlert(from, subject, text, isIncome) {
+  const hay = (from + ' ' + subject + ' ' + text).toLowerCase();
+  const isCardPaymentReceived = /(payment received|card settlement|thank you for your payment|credited to your card)/i.test(hay);
+
+  if (hay.includes('ntb') || hay.includes('nations trust') || hay.includes('amex')) {
+    if (isCardPaymentReceived) return { source: 'NTB / Amex', type: 'transfer', categoryId: 'exp-cards', title: 'Card Settlement → NTB Amex', method: 'Online Banking / Transfer', toAccount: 'NTB Amex', nature: 'fixed' };
+    return { source: 'NTB / Amex', categoryId: isIncome ? 'inc-other' : 'exp-food', title: 'NTB Amex — ' + subject.slice(0, 40), method: 'NTB Amex', nature: 'variable' };
+  }
+  if (hay.includes('seylan')) {
+    if (isCardPaymentReceived) return { source: 'Seylan Bank', type: 'transfer', categoryId: 'exp-cards', title: 'Card Settlement → Seylan Visa', method: 'Online Banking / Transfer', toAccount: 'Seylan Visa', nature: 'fixed' };
+    const isCard = hay.includes('card') || hay.includes('visa');
+    return { source: 'Seylan Bank', categoryId: isIncome ? 'inc-salary' : 'exp-other', title: 'Seylan — ' + subject.slice(0, 40), method: isCard ? 'Seylan Visa' : 'Online Banking / Transfer', nature: isIncome ? 'fixed' : 'variable' };
+  }
+  if (hay.includes('hnb') || hay.includes('hatton national')) {
+    if (isCardPaymentReceived) return { source: 'HNB', type: 'transfer', categoryId: 'exp-cards', title: 'Card Settlement → HNB Visa', method: 'Online Banking / Transfer', toAccount: 'HNB Visa', nature: 'fixed' };
+    const isCard = hay.includes('card') || hay.includes('visa');
+    return { source: 'HNB', categoryId: isIncome ? 'inc-salary' : 'exp-other', title: 'HNB — ' + subject.slice(0, 40), method: isCard ? 'HNB Visa' : 'Online Banking / Transfer', nature: isIncome ? 'fixed' : 'variable' };
+  }
+  if (hay.includes('pickme')) {
+    const isFood = hay.includes('food');
+    return { source: 'PickMe', categoryId: isFood ? 'exp-food' : 'exp-rides', title: isFood ? 'PickMe Food Order' : 'PickMe Ride Receipt', method: 'Cash in Hand', nature: 'variable' };
+  }
+  if (hay.includes('uber')) {
+    const isEats = hay.includes('eats');
+    return { source: 'Uber', categoryId: isEats ? 'exp-food' : 'exp-rides', title: isEats ? 'Uber Eats Order' : 'Uber Trip Receipt', method: 'NTB Amex', nature: 'variable' };
+  }
+  if (hay.includes('dialog') || hay.includes('slt') || hay.includes('ceb')) {
+    return { source: 'Subscriptions', categoryId: 'exp-utility', title: 'Utility Bill — ' + subject.slice(0, 35), method: 'Online Banking / Transfer', nature: 'fixed' };
+  }
+  return { source: 'Subscriptions', categoryId: isIncome ? 'inc-other' : 'exp-subs', title: subject.slice(0, 50), method: 'Seylan Visa', nature: 'fixed' };
+}
+
+function markMessageProcessed(msgId) {
+  try {
+    const msg = GmailApp.getMessageById(msgId);
+    const label = GmailApp.getUserLabelByName(LABEL_PROCESSED) || GmailApp.createLabel(LABEL_PROCESSED);
+    if (msg) msg.getThread().addLabel(label);
+  } catch (e) {}
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}`;
+    }
+
+    // ==========================================
+    // 12. CSV & JSON BACKUP / RESTORE
+    // ==========================================
+    function exportCSV() {
+      if (state.transactions.length === 0) {
+        showToast('No transactions available to export.', 'error');
+        return;
+      }
+      const headers = ['Date', 'Type', 'Title', 'Category', 'Classification', 'From / Method', 'To Account', 'Amount (LKR)'];
+      const rows = state.transactions.map(tx => {
+        const cat = getCategoryById(tx.categoryId);
+        const typeLabel = tx.type === 'transfer' ? 'CARD PAYMENT / TRANSFER' : tx.type.toUpperCase();
+        const classLabel = tx.type === 'transfer' ? 'Internal Transfer' : (tx.type === 'income' ? 'Income' : (tx.nature === 'fixed' ? 'Fixed Bill/Loan' : 'Daily Spend'));
+        return [
+          tx.date,
+          typeLabel,
+          `"${(tx.title || '').replace(/"/g, '""')}"`,
+          `"${(tx.type === 'transfer' ? 'Card Settlement / Cash' : cat.name).replace(/"/g, '""')}"`,
+          classLabel,
+          `"${(tx.method || '').replace(/"/g, '""')}"`,
+          `"${(tx.toAccount || '').replace(/"/g, '""')}"`,
+          tx.amount
+        ].join(',');
+      });
+      const blob = new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `RupeeFlow_Export_${getTodayISO()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exported!');
+    }
+
+    function exportJSON() {
+      const payload = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        transactions: state.transactions,
+        categories: state.categories,
+        cardsMeta: state.cardsMeta,
+        openingCashInHand: state.openingCashInHand
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `RupeeFlow_Backup_${getTodayISO()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('JSON backup downloaded!');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!Array.isArray(data.transactions)) throw new Error('Invalid backup');
+          state.transactions = data.transactions;
+          if (Array.isArray(data.categories) && data.categories.length > 0) state.categories = data.categories;
+          if (Array.isArray(data.cardsMeta)) state.cardsMeta = data.cardsMeta;
+          if (typeof data.openingCashInHand === 'number') state.openingCashInHand = data.openingCashInHand;
+          state.isDemo = false;
+          saveState();
+          refreshAllViews();
+          showToast(`Restored ${state.transactions.length} transactions!`);
+        } catch (err) {
+          showToast('Invalid backup file.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // Boot App
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
